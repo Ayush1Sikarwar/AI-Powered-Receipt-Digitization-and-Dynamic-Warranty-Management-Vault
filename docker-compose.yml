@@ -1,0 +1,91 @@
+# WarrantyVault AI — local development stack (SDD §11 Development, TSD §51).
+#
+# This compose file is the canonical "local Docker environment" deliverable
+# (PRD Phase 0). In this sandbox we run the same services natively
+# (PostgreSQL, Redis, Tesseract) and the app via uvicorn; the compose file
+# documents the production-intended topology and is used for cloud dev.
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: warranty
+      POSTGRES_PASSWORD: warranty_dev_pw
+      POSTGRES_DB: warranty_vault
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U warranty"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # S3-compatible object storage for original/processed documents.
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: warranty
+      MINIO_ROOT_PASSWORD: warranty_dev_pw
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../infrastructure/docker/backend.Dockerfile
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql+psycopg://warranty:warranty_dev_pw@postgres:5432/warranty_vault
+      REDIS_URL: redis://redis:6379/0
+      STORAGE_BACKEND: s3
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_BUCKET: warranty-vault
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: ../infrastructure/docker/backend.Dockerfile
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql+psycopg://warranty:warranty_dev_pw@postgres:5432/warranty_vault
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: python -m app.workers.run
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../infrastructure/docker/frontend.Dockerfile
+    environment:
+      VITE_API_BASE: http://localhost:8000/api/v1
+    ports:
+      - "5173:5173"
+
+volumes:
+  pgdata:
+  miniodata:

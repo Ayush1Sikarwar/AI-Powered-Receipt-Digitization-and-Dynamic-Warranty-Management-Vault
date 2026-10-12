@@ -1,0 +1,131 @@
+{
+  "metadata": {
+    "engine": "rule-based warranty matching (find_warranty_policy) + timeline rules (compute_timeline)",
+    "engine_source": "app.warranty.rules (unmodified)",
+    "dataset": "deterministic synthetic policy catalog (7 cases: region priority, versioning, generic fallback, registration UNKNOWN, registration anchored, battery coverage, out-of-window no-match)",
+    "today": "2026-09-04",
+    "date": "2026-09-06"
+  },
+  "overall": {
+    "cases": 7,
+    "policy_correctness": 1.0,
+    "duration_correctness": 1.0,
+    "source_validity": 1.0
+  },
+  "per_case": [
+    {
+      "case": "IN purchase \u2192 current v2.0, 120-month compressor",
+      "expected_policy": "AcmeCool AC India 2.0",
+      "got_policy": "AcmeCool AC India 2.0",
+      "policy_ok": true,
+      "source_ok": true,
+      "duration_ok": true,
+      "duration_detail": {
+        "FULL_UNIT": {
+          "expected": "2027-08-15",
+          "got": "2027-08-15",
+          "ok": true
+        },
+        "COMPRESSOR": {
+          "expected": "2036-08-15",
+          "got": "2036-08-15",
+          "ok": true
+        }
+      },
+      "notes": []
+    },
+    {
+      "case": "US purchase \u2192 region-specific policy",
+      "expected_policy": "AcmeCool AC US 1.0",
+      "got_policy": "AcmeCool AC US 1.0",
+      "policy_ok": true,
+      "source_ok": true,
+      "duration_ok": true,
+      "duration_detail": {
+        "FULL_UNIT": {
+          "expected": "2027-08-15",
+          "got": "2027-08-15",
+          "ok": true
+        }
+      },
+      "notes": []
+    },
+    {
+      "case": "Unknown region + region-specific policies only \u2192 NO mapping (honest)",
+      "expected_policy": null,
+      "got_policy": null,
+      "policy_ok": true,
+      "source_ok": true,
+      "duration_ok": true,
+      "duration_detail": {},
+      "notes": [
+        "policies in scope but none matched model/sku/category (fuzzy/semantic support below threshold)"
+      ]
+    },
+    {
+      "case": "Registration required, not recorded \u2192 honest UNKNOWN (never guessed)",
+      "expected_policy": "WashPro Washer 1.0",
+      "got_policy": "WashPro Washer 1.0",
+      "policy_ok": true,
+      "source_ok": true,
+      "duration_ok": true,
+      "duration_detail": {
+        "FULL_UNIT": {
+          "expected": "UNKNOWN",
+          "got": null,
+          "ok": true
+        }
+      },
+      "notes": []
+    },
+    {
+      "case": "Registration recorded \u2192 24 months from registration date",
+      "expected_policy": "WashPro Washer 1.0",
+      "got_policy": "WashPro Washer 1.0",
+      "policy_ok": true,
+      "source_ok": true,
+      "duration_ok": true,
+      "duration_detail": {
+        "FULL_UNIT": {
+          "expected": "2028-08-20",
+          "got": "2028-08-20",
+          "ok": true
+        }
+      },
+      "notes": []
+    },
+    {
+      "case": "Laptop \u2192 battery + unit coverage",
+      "expected_policy": "NimbusTech Laptop 1.0",
+      "got_policy": "NimbusTech Laptop 1.0",
+      "policy_ok": true,
+      "source_ok": true,
+      "duration_ok": true,
+      "duration_detail": {
+        "FULL_UNIT": {
+          "expected": "2027-08-15",
+          "got": "2027-08-15",
+          "ok": true
+        },
+        "BATTERY": {
+          "expected": "2027-08-15",
+          "got": "2027-08-15",
+          "ok": true
+        }
+      },
+      "notes": []
+    },
+    {
+      "case": "Purchase before effective window \u2192 NO policy (no fabrication)",
+      "expected_policy": null,
+      "got_policy": null,
+      "policy_ok": true,
+      "source_ok": true,
+      "duration_ok": true,
+      "duration_detail": {},
+      "notes": [
+        "no active policy in scope (manufacturer/region/effective window)"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1675 @@
+{
+  "metadata": {
+    "engine": "rule-based-product-matcher",
+    "engine_source": "app.ai.product.matching (unmodified, live from registry identity)",
+    "dataset": "synthetic deterministic catalog (20 products / 5 manufacturers) + 126 queries (120 positive incl. noisy/alias/brand variants, 6 negative grocery lines)",
+    "auto_accept_threshold": 0.9,
+    "user_review_threshold": 0.7,
+    "thresholds_status": "FINAL (PRD \u00a75 evaluation dataset floor met \u2014 see RESULTS.json metadata)",
+    "date": "2026-09-06"
+  },
+  "overall": {
+    "queries_positive": 111,
+    "queries_negative": 6,
+    "top1_accuracy": 0.8559,
+    "top3_accuracy": 0.8919,
+    "auto_match_rate": 0.6396,
+    "false_match_rate": 0.0,
+    "false_matches": 0,
+    "correct_reject_rate_negatives": 1.0,
+    "review_required_rate": 0.2613
+  },
+  "by_query_kind": {
+    "exact_model": {
+      "n": 20,
+      "top1_acc": 1.0,
+      "auto_rate": 1.0
+    },
+    "exact_sku": {
+      "n": 20,
+      "top1_acc": 1.0,
+      "auto_rate": 1.0
+    },
+    "name_only": {
+      "n": 20,
+      "top1_acc": 1.0,
+      "auto_rate": 0.0
+    },
+    "brand_model": {
+      "n": 20,
+      "top1_acc": 1.0,
+      "auto_rate": 1.0
+    },
+    "alias": {
+      "n": 11,
+      "top1_acc": 1.0,
+      "auto_rate": 1.0
+    },
+    "noisy": {
+      "n": 20,
+      "top1_acc": 0.2,
+      "auto_rate": 0.0
+    }
+  },
+  "per_query": [
+    {
+      "kind": "exact_model",
+      "gt": 1,
+      "status": "AUTO_MATCHED",
+      "top1": 1,
+      "top3": [
+        1,
+        2,
+        3
+      ],
+      "n_candidates": 6,
+      "chosen": 1,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "exact_sku",
+      "gt": 1,
+      "status": "AUTO_MATCHED",
+      "top1": 1,
+      "top3": [
+        1,
+        2,
+        3
+      ],
+      "n_candidates": 6,
+      "chosen": 1,
+      "method": "EXACT_SKU",
+      "top1_confidence": 1.0
+    },
+    {
+      "kind": "name_only",
+      "gt": 1,
+      "status": "REVIEW_REQUIRED",
+      "top1": 1,
+      "top3": [
+        1,
+        2,
+        3
+      ],
+      "n_candidates": 6,
+      "chosen": null,
+      "method": "FUZZY_MATCH",
+      "top1_confidence": 0.85
+    },
+    {
+      "kind": "brand_model",
+      "gt": 1,
+      "status": "AUTO_MATCHED",
+      "top1": 1,
+      "top3": [
+        1,
+        2
+      ],
+      "n_candidates": 2,
+      "chosen": 1,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "alias",
+      "gt": 1,
+      "status": "AUTO_MATCHED",
+      "top1": 1,
+      "top3": [
+        1,
+        16,
+        2
+      ],
+      "n_candidates": 6,
+      "chosen": 1,
+      "method": "ALIAS_MATCH",
+      "top1_confidence": 0.9
+    },
+    {
+      "kind": "noisy",
+      "gt": 1,
+      "status": "NO_MATCH",
+      "top1": null,
+      "top3": [],
+      "n_candidates": 0,
+      "chosen": null,
+      "method": null,
+      "top1_confidence": null
+    },
+    {
+      "kind": "exact_model",
+      "gt": 2,
+      "status": "AUTO_MATCHED",
+      "top1": 2,
+      "top3": [
+        2,
+        1,
+        3
+      ],
+      "n_candidates": 6,
+      "chosen": 2,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "exact_sku",
+      "gt": 2,
+      "status": "AUTO_MATCHED",
+      "top1": 2,
+      "top3": [
+        2,
+        1,
+        3
+      ],
+      "n_candidates": 6,
+      "chosen": 2,
+      "method": "EXACT_SKU",
+      "top1_confidence": 1.0
+    },
+    {
+      "kind": "name_only",
+      "gt": 2,
+      "status": "REVIEW_REQUIRED",
+      "top1": 2,
+      "top3": [
+        2,
+        1,
+        3
+      ],
+      "n_candidates": 6,
+      "chosen": null,
+      "method": "FUZZY_MATCH",
+      "top1_confidence": 0.85
+    },
+    {
+      "kind": "brand_model",
+      "gt": 2,
+      "status": "AUTO_MATCHED",
+      "top1": 2,
+      "top3": [
+        2,
+        1,
+        3
+      ],
+      "n_candidates": 3,
+      "chosen": 2,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "alias",
+      "gt": 2,
+      "status": "AUTO_MATCHED",
+      "top1": 2,
+      "top3": [
+        2,
+        17,
+        1
+      ],
+      "n_candidates": 6,
+      "chosen": 2,
+      "method": "ALIAS_MATCH",
+      "top1_confidence": 0.9
+    },
+    {
+      "kind": "noisy",
+      "gt": 2,
+      "status": "NO_MATCH",
+      "top1": null,
+      "top3": [],
+      "n_candidates": 0,
+      "chosen": null,
+      "method": null,
+      "top1_confidence": null
+    },
+    {
+      "kind": "exact_model",
+      "gt": 3,
+      "status": "AUTO_MATCHED",
+      "top1": 3,
+      "top3": [
+        3,
+        2,
+        1
+      ],
+      "n_candidates": 6,
+      "chosen": 3,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "exact_sku",
+      "gt": 3,
+      "status": "AUTO_MATCHED",
+      "top1": 3,
+      "top3": [
+        3,
+        2,
+        1
+      ],
+      "n_candidates": 6,
+      "chosen": 3,
+      "method": "EXACT_SKU",
+      "top1_confidence": 1.0
+    },
+    {
+      "kind": "name_only",
+      "gt": 3,
+      "status": "REVIEW_REQUIRED",
+      "top1": 3,
+      "top3": [
+        3,
+        2,
+        1
+      ],
+      "n_candidates": 6,
+      "chosen": null,
+      "method": "FUZZY_MATCH",
+      "top1_confidence": 0.85
+    },
+    {
+      "kind": "brand_model",
+      "gt": 3,
+      "status": "AUTO_MATCHED",
+      "top1": 3,
+      "top3": [
+        3,
+        2
+      ],
+      "n_candidates": 2,
+      "chosen": 3,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "noisy",
+      "gt": 3,
+      "status": "NO_MATCH",
+      "top1": null,
+      "top3": [],
+      "n_candidates": 0,
+      "chosen": null,
+      "method": null,
+      "top1_confidence": null
+    },
+    {
+      "kind": "exact_model",
+      "gt": 4,
+      "status": "AUTO_MATCHED",
+      "top1": 4,
+      "top3": [
+        4,
+        1,
+        2
+      ],
+      "n_candidates": 6,
+      "chosen": 4,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "exact_sku",
+      "gt": 4,
+      "status": "AUTO_MATCHED",
+      "top1": 4,
+      "top3": [
+        4,
+        1,
+        2
+      ],
+      "n_candidates": 6,
+      "chosen": 4,
+      "method": "EXACT_SKU",
+      "top1_confidence": 1.0
+    },
+    {
+      "kind": "name_only",
+      "gt": 4,
+      "status": "REVIEW_REQUIRED",
+      "top1": 4,
+      "top3": [
+        4,
+        1,
+        2
+      ],
+      "n_candidates": 6,
+      "chosen": null,
+      "method": "FUZZY_MATCH",
+      "top1_confidence": 0.85
+    },
+    {
+      "kind": "brand_model",
+      "gt": 4,
+      "status": "AUTO_MATCHED",
+      "top1": 4,
+      "top3": [
+        4
+      ],
+      "n_candidates": 1,
+      "chosen": 4,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "alias",
+      "gt": 4,
+      "status": "AUTO_MATCHED",
+      "top1": 4,
+      "top3": [
+        4,
+        1,
+        2
+      ],
+      "n_candidates": 6,
+      "chosen": 4,
+      "method": "ALIAS_MATCH",
+      "top1_confidence": 0.9
+    },
+    {
+      "kind": "noisy",
+      "gt": 4,
+      "status": "NO_MATCH",
+      "top1": null,
+      "top3": [],
+      "n_candidates": 0,
+      "chosen": null,
+      "method": null,
+      "top1_confidence": null
+    },
+    {
+      "kind": "exact_model",
+      "gt": 5,
+      "status": "AUTO_MATCHED",
+      "top1": 5,
+      "top3": [
+        5,
+        6,
+        7
+      ],
+      "n_candidates": 4,
+      "chosen": 5,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "exact_sku",
+      "gt": 5,
+      "status": "AUTO_MATCHED",
+      "top1": 5,
+      "top3": [
+        5,
+        6,
+        7
+      ],
+      "n_candidates": 4,
+      "chosen": 5,
+      "method": "EXACT_SKU",
+      "top1_confidence": 1.0
+    },
+    {
+      "kind": "name_only",
+      "gt": 5,
+      "status": "REVIEW_REQUIRED",
+      "top1": 5,
+      "top3": [
+        5,
+        6,
+        7
+      ],
+      "n_candidates": 4,
+      "chosen": null,
+      "method": "FUZZY_MATCH",
+      "top1_confidence": 0.85
+    },
+    {
+      "kind": "brand_model",
+      "gt": 5,
+      "status": "AUTO_MATCHED",
+      "top1": 5,
+      "top3": [
+        5,
+        6,
+        8
+      ],
+      "n_candidates": 4,
+      "chosen": 5,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "alias",
+      "gt": 5,
+      "status": "AUTO_MATCHED",
+      "top1": 5,
+      "top3": [
+        5
+      ],
+      "n_candidates": 1,
+      "chosen": 5,
+      "method": "ALIAS_MATCH",
+      "top1_confidence": 0.9
+    },
+    {
+      "kind": "noisy",
+      "gt": 5,
+      "status": "REVIEW_REQUIRED",
+      "top1": 8,
+      "top3": [
+        8,
+        5,
+        6
+      ],
+      "n_candidates": 4,
+      "chosen": null,
+      "method": "SEMANTIC_MATCH",
+      "top1_confidence": 0.5
+    },
+    {
+      "kind": "exact_model",
+      "gt": 6,
+      "status": "AUTO_MATCHED",
+      "top1": 6,
+      "top3": [
+        6,
+        5,
+        7
+      ],
+      "n_candidates": 4,
+      "chosen": 6,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "exact_sku",
+      "gt": 6,
+      "status": "AUTO_MATCHED",
+      "top1": 6,
+      "top3": [
+        6,
+        5,
+        7
+      ],
+      "n_candidates": 4,
+      "chosen": 6,
+      "method": "EXACT_SKU",
+      "top1_confidence": 1.0
+    },
+    {
+      "kind": "name_only",
+      "gt": 6,
+      "status": "REVIEW_REQUIRED",
+      "top1": 6,
+      "top3": [
+        6,
+        5,
+        7
+      ],
+      "n_candidates": 4,
+      "chosen": null,
+      "method": "FUZZY_MATCH",
+      "top1_confidence": 0.85
+    },
+    {
+      "kind": "brand_model",
+      "gt": 6,
+      "status": "AUTO_MATCHED",
+      "top1": 6,
+      "top3": [
+        6,
+        5,
+        8
+      ],
+      "n_candidates": 4,
+      "chosen": 6,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "noisy",
+      "gt": 6,
+      "status": "REVIEW_REQUIRED",
+      "top1": 8,
+      "top3": [
+        8,
+        5,
+        6
+      ],
+      "n_candidates": 4,
+      "chosen": null,
+      "method": "SEMANTIC_MATCH",
+      "top1_confidence": 0.5
+    },
+    {
+      "kind": "exact_model",
+      "gt": 7,
+      "status": "AUTO_MATCHED",
+      "top1": 7,
+      "top3": [
+        7,
+        5,
+        6
+      ],
+      "n_candidates": 4,
+      "chosen": 7,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "exact_sku",
+      "gt": 7,
+      "status": "AUTO_MATCHED",
+      "top1": 7,
+      "top3": [
+        7,
+        5,
+        6
+      ],
+      "n_candidates": 4,
+      "chosen": 7,
+      "method": "EXACT_SKU",
+      "top1_confidence": 1.0
+    },
+    {
+      "kind": "name_only",
+      "gt": 7,
+      "status": "REVIEW_REQUIRED",
+      "top1": 7,
+      "top3": [
+        7,
+        5,
+        6
+      ],
+      "n_candidates": 4,
+      "chosen": null,
+      "method": "FUZZY_MATCH",
+      "top1_confidence": 0.85
+    },
+    {
+      "kind": "brand_model",
+      "gt": 7,
+      "status": "AUTO_MATCHED",
+      "top1": 7,
+      "top3": [
+        7,
+        8,
+        5
+      ],
+      "n_candidates": 4,
+      "chosen": 7,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "alias",
+      "gt": 7,
+      "status": "AUTO_MATCHED",
+      "top1": 7,
+      "top3": [
+        7,
+        8,
+        5
+      ],
+      "n_candidates": 4,
+      "chosen": 7,
+      "method": "ALIAS_MATCH",
+      "top1_confidence": 0.9
+    },
+    {
+      "kind": "noisy",
+      "gt": 7,
+      "status": "REVIEW_REQUIRED",
+      "top1": 8,
+      "top3": [
+        8,
+        5,
+        6
+      ],
+      "n_candidates": 4,
+      "chosen": null,
+      "method": "SEMANTIC_MATCH",
+      "top1_confidence": 0.5
+    },
+    {
+      "kind": "exact_model",
+      "gt": 8,
+      "status": "AUTO_MATCHED",
+      "top1": 8,
+      "top3": [
+        8,
+        7,
+        5
+      ],
+      "n_candidates": 4,
+      "chosen": 8,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "exact_sku",
+      "gt": 8,
+      "status": "AUTO_MATCHED",
+      "top1": 8,
+      "top3": [
+        8,
+        7,
+        5
+      ],
+      "n_candidates": 4,
+      "chosen": 8,
+      "method": "EXACT_SKU",
+      "top1_confidence": 1.0
+    },
+    {
+      "kind": "name_only",
+      "gt": 8,
+      "status": "REVIEW_REQUIRED",
+      "top1": 8,
+      "top3": [
+        8,
+        7,
+        5
+      ],
+      "n_candidates": 4,
+      "chosen": null,
+      "method": "FUZZY_MATCH",
+      "top1_confidence": 0.85
+    },
+    {
+      "kind": "brand_model",
+      "gt": 8,
+      "status": "AUTO_MATCHED",
+      "top1": 8,
+      "top3": [
+        8,
+        5,
+        6
+      ],
+      "n_candidates": 4,
+      "chosen": 8,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "noisy",
+      "gt": 8,
+      "status": "REVIEW_REQUIRED",
+      "top1": 8,
+      "top3": [
+        8,
+        5,
+        6
+      ],
+      "n_candidates": 4,
+      "chosen": null,
+      "method": "SEMANTIC_MATCH",
+      "top1_confidence": 0.5
+    },
+    {
+      "kind": "exact_model",
+      "gt": 9,
+      "status": "AUTO_MATCHED",
+      "top1": 9,
+      "top3": [
+        9,
+        10,
+        11
+      ],
+      "n_candidates": 3,
+      "chosen": 9,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "exact_sku",
+      "gt": 9,
+      "status": "AUTO_MATCHED",
+      "top1": 9,
+      "top3": [
+        9,
+        10,
+        11
+      ],
+      "n_candidates": 3,
+      "chosen": 9,
+      "method": "EXACT_SKU",
+      "top1_confidence": 1.0
+    },
+    {
+      "kind": "name_only",
+      "gt": 9,
+      "status": "REVIEW_REQUIRED",
+      "top1": 9,
+      "top3": [
+        9,
+        10,
+        11
+      ],
+      "n_candidates": 3,
+      "chosen": null,
+      "method": "FUZZY_MATCH",
+      "top1_confidence": 0.85
+    },
+    {
+      "kind": "brand_model",
+      "gt": 9,
+      "status": "AUTO_MATCHED",
+      "top1": 9,
+      "top3": [
+        9,
+        10,
+        11
+      ],
+      "n_candidates": 3,
+      "chosen": 9,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "alias",
+      "gt": 9,
+      "status": "AUTO_MATCHED",
+      "top1": 9,
+      "top3": [
+        9
+      ],
+      "n_candidates": 1,
+      "chosen": 9,
+      "method": "ALIAS_MATCH",
+      "top1_confidence": 0.9
+    },
+    {
+      "kind": "noisy",
+      "gt": 9,
+      "status": "REVIEW_REQUIRED",
+      "top1": 11,
+      "top3": [
+        11,
+        9,
+        10
+      ],
+      "n_candidates": 3,
+      "chosen": null,
+      "method": "SEMANTIC_MATCH",
+      "top1_confidence": 0.5
+    },
+    {
+      "kind": "exact_model",
+      "gt": 10,
+      "status": "AUTO_MATCHED",
+      "top1": 10,
+      "top3": [
+        10,
+        9,
+        11
+      ],
+      "n_candidates": 3,
+      "chosen": 10,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "exact_sku",
+      "gt": 10,
+      "status": "AUTO_MATCHED",
+      "top1": 10,
+      "top3": [
+        10,
+        9,
+        11
+      ],
+      "n_candidates": 3,
+      "chosen": 10,
+      "method": "EXACT_SKU",
+      "top1_confidence": 1.0
+    },
+    {
+      "kind": "name_only",
+      "gt": 10,
+      "status": "REVIEW_REQUIRED",
+      "top1": 10,
+      "top3": [
+        10,
+        9,
+        11
+      ],
+      "n_candidates": 3,
+      "chosen": null,
+      "method": "FUZZY_MATCH",
+      "top1_confidence": 0.85
+    },
+    {
+      "kind": "brand_model",
+      "gt": 10,
+      "status": "AUTO_MATCHED",
+      "top1": 10,
+      "top3": [
+        10,
+        9,
+        11
+      ],
+      "n_candidates": 3,
+      "chosen": 10,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "noisy",
+      "gt": 10,
+      "status": "REVIEW_REQUIRED",
+      "top1": 11,
+      "top3": [
+        11,
+        9,
+        10
+      ],
+      "n_candidates": 3,
+      "chosen": null,
+      "method": "SEMANTIC_MATCH",
+      "top1_confidence": 0.5
+    },
+    {
+      "kind": "exact_model",
+      "gt": 11,
+      "status": "AUTO_MATCHED",
+      "top1": 11,
+      "top3": [
+        11,
+        9,
+        10
+      ],
+      "n_candidates": 3,
+      "chosen": 11,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "exact_sku",
+      "gt": 11,
+      "status": "AUTO_MATCHED",
+      "top1": 11,
+      "top3": [
+        11,
+        9,
+        10
+      ],
+      "n_candidates": 3,
+      "chosen": 11,
+      "method": "EXACT_SKU",
+      "top1_confidence": 1.0
+    },
+    {
+      "kind": "name_only",
+      "gt": 11,
+      "status": "REVIEW_REQUIRED",
+      "top1": 11,
+      "top3": [
+        11,
+        9,
+        10
+      ],
+      "n_candidates": 3,
+      "chosen": null,
+      "method": "FUZZY_MATCH",
+      "top1_confidence": 0.85
+    },
+    {
+      "kind": "brand_model",
+      "gt": 11,
+      "status": "AUTO_MATCHED",
+      "top1": 11,
+      "top3": [
+        11,
+        9,
+        10
+      ],
+      "n_candidates": 3,
+      "chosen": 11,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "alias",
+      "gt": 11,
+      "status": "AUTO_MATCHED",
+      "top1": 11,
+      "top3": [
+        11
+      ],
+      "n_candidates": 1,
+      "chosen": 11,
+      "method": "ALIAS_MATCH",
+      "top1_confidence": 0.9
+    },
+    {
+      "kind": "noisy",
+      "gt": 11,
+      "status": "REVIEW_REQUIRED",
+      "top1": 11,
+      "top3": [
+        11,
+        9,
+        10
+      ],
+      "n_candidates": 3,
+      "chosen": null,
+      "method": "SEMANTIC_MATCH",
+      "top1_confidence": 0.5
+    },
+    {
+      "kind": "exact_model",
+      "gt": 12,
+      "status": "AUTO_MATCHED",
+      "top1": 12,
+      "top3": [
+        12
+      ],
+      "n_candidates": 1,
+      "chosen": 12,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "exact_sku",
+      "gt": 12,
+      "status": "AUTO_MATCHED",
+      "top1": 12,
+      "top3": [
+        12
+      ],
+      "n_candidates": 1,
+      "chosen": 12,
+      "method": "EXACT_SKU",
+      "top1_confidence": 1.0
+    },
+    {
+      "kind": "name_only",
+      "gt": 12,
+      "status": "REVIEW_REQUIRED",
+      "top1": 12,
+      "top3": [
+        12
+      ],
+      "n_candidates": 1,
+      "chosen": null,
+      "method": "FUZZY_MATCH",
+      "top1_confidence": 0.85
+    },
+    {
+      "kind": "brand_model",
+      "gt": 12,
+      "status": "AUTO_MATCHED",
+      "top1": 12,
+      "top3": [
+        12
+      ],
+      "n_candidates": 1,
+      "chosen": 12,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "noisy",
+      "gt": 12,
+      "status": "REVIEW_REQUIRED",
+      "top1": 12,
+      "top3": [
+        12
+      ],
+      "n_candidates": 1,
+      "chosen": null,
+      "method": "SEMANTIC_MATCH",
+      "top1_confidence": 0.5
+    },
+    {
+      "kind": "exact_model",
+      "gt": 13,
+      "status": "AUTO_MATCHED",
+      "top1": 13,
+      "top3": [
+        13,
+        14
+      ],
+      "n_candidates": 2,
+      "chosen": 13,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "exact_sku",
+      "gt": 13,
+      "status": "AUTO_MATCHED",
+      "top1": 13,
+      "top3": [
+        13,
+        14
+      ],
+      "n_candidates": 2,
+      "chosen": 13,
+      "method": "EXACT_SKU",
+      "top1_confidence": 1.0
+    },
+    {
+      "kind": "name_only",
+      "gt": 13,
+      "status": "REVIEW_REQUIRED",
+      "top1": 13,
+      "top3": [
+        13,
+        14
+      ],
+      "n_candidates": 2,
+      "chosen": null,
+      "method": "FUZZY_MATCH",
+      "top1_confidence": 0.85
+    },
+    {
+      "kind": "brand_model",
+      "gt": 13,
+      "status": "AUTO_MATCHED",
+      "top1": 13,
+      "top3": [
+        13
+      ],
+      "n_candidates": 1,
+      "chosen": 13,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "alias",
+      "gt": 13,
+      "status": "AUTO_MATCHED",
+      "top1": 13,
+      "top3": [
+        13
+      ],
+      "n_candidates": 1,
+      "chosen": 13,
+      "method": "ALIAS_MATCH",
+      "top1_confidence": 0.9
+    },
+    {
+      "kind": "noisy",
+      "gt": 13,
+      "status": "NO_MATCH",
+      "top1": null,
+      "top3": [],
+      "n_candidates": 0,
+      "chosen": null,
+      "method": null,
+      "top1_confidence": null
+    },
+    {
+      "kind": "exact_model",
+      "gt": 14,
+      "status": "AUTO_MATCHED",
+      "top1": 14,
+      "top3": [
+        14,
+        13
+      ],
+      "n_candidates": 2,
+      "chosen": 14,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "exact_sku",
+      "gt": 14,
+      "status": "AUTO_MATCHED",
+      "top1": 14,
+      "top3": [
+        14,
+        13
+      ],
+      "n_candidates": 2,
+      "chosen": 14,
+      "method": "EXACT_SKU",
+      "top1_confidence": 1.0
+    },
+    {
+      "kind": "name_only",
+      "gt": 14,
+      "status": "REVIEW_REQUIRED",
+      "top1": 14,
+      "top3": [
+        14,
+        13
+      ],
+      "n_candidates": 2,
+      "chosen": null,
+      "method": "FUZZY_MATCH",
+      "top1_confidence": 0.85
+    },
+    {
+      "kind": "brand_model",
+      "gt": 14,
+      "status": "AUTO_MATCHED",
+      "top1": 14,
+      "top3": [
+        14
+      ],
+      "n_candidates": 1,
+      "chosen": 14,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "alias",
+      "gt": 14,
+      "status": "AUTO_MATCHED",
+      "top1": 14,
+      "top3": [
+        14
+      ],
+      "n_candidates": 1,
+      "chosen": 14,
+      "method": "ALIAS_MATCH",
+      "top1_confidence": 0.9
+    },
+    {
+      "kind": "noisy",
+      "gt": 14,
+      "status": "NO_MATCH",
+      "top1": null,
+      "top3": [],
+      "n_candidates": 0,
+      "chosen": null,
+      "method": null,
+      "top1_confidence": null
+    },
+    {
+      "kind": "exact_model",
+      "gt": 15,
+      "status": "AUTO_MATCHED",
+      "top1": 15,
+      "top3": [
+        15
+      ],
+      "n_candidates": 1,
+      "chosen": 15,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "exact_sku",
+      "gt": 15,
+      "status": "AUTO_MATCHED",
+      "top1": 15,
+      "top3": [
+        15
+      ],
+      "n_candidates": 1,
+      "chosen": 15,
+      "method": "EXACT_SKU",
+      "top1_confidence": 1.0
+    },
+    {
+      "kind": "name_only",
+      "gt": 15,
+      "status": "REVIEW_REQUIRED",
+      "top1": 15,
+      "top3": [
+        15
+      ],
+      "n_candidates": 1,
+      "chosen": null,
+      "method": "FUZZY_MATCH",
+      "top1_confidence": 0.85
+    },
+    {
+      "kind": "brand_model",
+      "gt": 15,
+      "status": "AUTO_MATCHED",
+      "top1": 15,
+      "top3": [
+        15
+      ],
+      "n_candidates": 1,
+      "chosen": 15,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "noisy",
+      "gt": 15,
+      "status": "REVIEW_REQUIRED",
+      "top1": 15,
+      "top3": [
+        15
+      ],
+      "n_candidates": 1,
+      "chosen": null,
+      "method": "SEMANTIC_MATCH",
+      "top1_confidence": 0.5
+    },
+    {
+      "kind": "exact_model",
+      "gt": 16,
+      "status": "AUTO_MATCHED",
+      "top1": 16,
+      "top3": [
+        16,
+        1,
+        2
+      ],
+      "n_candidates": 6,
+      "chosen": 16,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "exact_sku",
+      "gt": 16,
+      "status": "AUTO_MATCHED",
+      "top1": 16,
+      "top3": [
+        16,
+        1,
+        2
+      ],
+      "n_candidates": 6,
+      "chosen": 16,
+      "method": "EXACT_SKU",
+      "top1_confidence": 1.0
+    },
+    {
+      "kind": "name_only",
+      "gt": 16,
+      "status": "REVIEW_REQUIRED",
+      "top1": 16,
+      "top3": [
+        16,
+        1,
+        2
+      ],
+      "n_candidates": 6,
+      "chosen": null,
+      "method": "FUZZY_MATCH",
+      "top1_confidence": 0.85
+    },
+    {
+      "kind": "brand_model",
+      "gt": 16,
+      "status": "AUTO_MATCHED",
+      "top1": 16,
+      "top3": [
+        16
+      ],
+      "n_candidates": 1,
+      "chosen": 16,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "alias",
+      "gt": 16,
+      "status": "AUTO_MATCHED",
+      "top1": 16,
+      "top3": [
+        16
+      ],
+      "n_candidates": 1,
+      "chosen": 16,
+      "method": "ALIAS_MATCH",
+      "top1_confidence": 0.9
+    },
+    {
+      "kind": "noisy",
+      "gt": 16,
+      "status": "NO_MATCH",
+      "top1": null,
+      "top3": [],
+      "n_candidates": 0,
+      "chosen": null,
+      "method": null,
+      "top1_confidence": null
+    },
+    {
+      "kind": "exact_model",
+      "gt": 17,
+      "status": "AUTO_MATCHED",
+      "top1": 17,
+      "top3": [
+        17,
+        16,
+        1
+      ],
+      "n_candidates": 6,
+      "chosen": 17,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "exact_sku",
+      "gt": 17,
+      "status": "AUTO_MATCHED",
+      "top1": 17,
+      "top3": [
+        17,
+        16,
+        1
+      ],
+      "n_candidates": 6,
+      "chosen": 17,
+      "method": "EXACT_SKU",
+      "top1_confidence": 1.0
+    },
+    {
+      "kind": "name_only",
+      "gt": 17,
+      "status": "REVIEW_REQUIRED",
+      "top1": 17,
+      "top3": [
+        17,
+        16,
+        1
+      ],
+      "n_candidates": 6,
+      "chosen": null,
+      "method": "FUZZY_MATCH",
+      "top1_confidence": 0.85
+    },
+    {
+      "kind": "brand_model",
+      "gt": 17,
+      "status": "AUTO_MATCHED",
+      "top1": 17,
+      "top3": [
+        17
+      ],
+      "n_candidates": 1,
+      "chosen": 17,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "noisy",
+      "gt": 17,
+      "status": "NO_MATCH",
+      "top1": null,
+      "top3": [],
+      "n_candidates": 0,
+      "chosen": null,
+      "method": null,
+      "top1_confidence": null
+    },
+    {
+      "kind": "exact_model",
+      "gt": 18,
+      "status": "AUTO_MATCHED",
+      "top1": 18,
+      "top3": [
+        18
+      ],
+      "n_candidates": 1,
+      "chosen": 18,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "exact_sku",
+      "gt": 18,
+      "status": "AUTO_MATCHED",
+      "top1": 18,
+      "top3": [
+        18
+      ],
+      "n_candidates": 1,
+      "chosen": 18,
+      "method": "EXACT_SKU",
+      "top1_confidence": 1.0
+    },
+    {
+      "kind": "name_only",
+      "gt": 18,
+      "status": "REVIEW_REQUIRED",
+      "top1": 18,
+      "top3": [
+        18
+      ],
+      "n_candidates": 1,
+      "chosen": null,
+      "method": "FUZZY_MATCH",
+      "top1_confidence": 0.85
+    },
+    {
+      "kind": "brand_model",
+      "gt": 18,
+      "status": "AUTO_MATCHED",
+      "top1": 18,
+      "top3": [
+        18
+      ],
+      "n_candidates": 1,
+      "chosen": 18,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "noisy",
+      "gt": 18,
+      "status": "NO_MATCH",
+      "top1": null,
+      "top3": [],
+      "n_candidates": 0,
+      "chosen": null,
+      "method": null,
+      "top1_confidence": null
+    },
+    {
+      "kind": "exact_model",
+      "gt": 19,
+      "status": "AUTO_MATCHED",
+      "top1": 19,
+      "top3": [
+        19,
+        20
+      ],
+      "n_candidates": 2,
+      "chosen": 19,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "exact_sku",
+      "gt": 19,
+      "status": "AUTO_MATCHED",
+      "top1": 19,
+      "top3": [
+        19,
+        20
+      ],
+      "n_candidates": 2,
+      "chosen": 19,
+      "method": "EXACT_SKU",
+      "top1_confidence": 1.0
+    },
+    {
+      "kind": "name_only",
+      "gt": 19,
+      "status": "REVIEW_REQUIRED",
+      "top1": 19,
+      "top3": [
+        19,
+        20
+      ],
+      "n_candidates": 2,
+      "chosen": null,
+      "method": "FUZZY_MATCH",
+      "top1_confidence": 0.85
+    },
+    {
+      "kind": "brand_model",
+      "gt": 19,
+      "status": "AUTO_MATCHED",
+      "top1": 19,
+      "top3": [
+        19,
+        20
+      ],
+      "n_candidates": 2,
+      "chosen": 19,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "alias",
+      "gt": 19,
+      "status": "AUTO_MATCHED",
+      "top1": 19,
+      "top3": [
+        19
+      ],
+      "n_candidates": 1,
+      "chosen": 19,
+      "method": "ALIAS_MATCH",
+      "top1_confidence": 0.9
+    },
+    {
+      "kind": "noisy",
+      "gt": 19,
+      "status": "NO_MATCH",
+      "top1": null,
+      "top3": [],
+      "n_candidates": 0,
+      "chosen": null,
+      "method": null,
+      "top1_confidence": null
+    },
+    {
+      "kind": "exact_model",
+      "gt": 20,
+      "status": "AUTO_MATCHED",
+      "top1": 20,
+      "top3": [
+        20,
+        19
+      ],
+      "n_candidates": 2,
+      "chosen": 20,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "exact_sku",
+      "gt": 20,
+      "status": "AUTO_MATCHED",
+      "top1": 20,
+      "top3": [
+        20,
+        19
+      ],
+      "n_candidates": 2,
+      "chosen": 20,
+      "method": "EXACT_SKU",
+      "top1_confidence": 1.0
+    },
+    {
+      "kind": "name_only",
+      "gt": 20,
+      "status": "REVIEW_REQUIRED",
+      "top1": 20,
+      "top3": [
+        20,
+        19
+      ],
+      "n_candidates": 2,
+      "chosen": null,
+      "method": "FUZZY_MATCH",
+      "top1_confidence": 0.85
+    },
+    {
+      "kind": "brand_model",
+      "gt": 20,
+      "status": "AUTO_MATCHED",
+      "top1": 20,
+      "top3": [
+        20,
+        19
+      ],
+      "n_candidates": 2,
+      "chosen": 20,
+      "method": "EXACT_MODEL",
+      "top1_confidence": 0.98
+    },
+    {
+      "kind": "noisy",
+      "gt": 20,
+      "status": "NO_MATCH",
+      "top1": null,
+      "top3": [],
+      "n_candidates": 0,
+      "chosen": null,
+      "method": null,
+      "top1_confidence": null
+    },
+    {
+      "kind": "negative",
+      "gt": null,
+      "status": "NO_MATCH",
+      "top1": null,
+      "top3": [],
+      "n_candidates": 0,
+      "chosen": null,
+      "method": null,
+      "top1_confidence": null
+    },
+    {
+      "kind": "negative",
+      "gt": null,
+      "status": "NO_MATCH",
+      "top1": null,
+      "top3": [],
+      "n_candidates": 0,
+      "chosen": null,
+      "method": null,
+      "top1_confidence": null
+    },
+    {
+      "kind": "negative",
+      "gt": null,
+      "status": "NO_MATCH",
+      "top1": null,
+      "top3": [],
+      "n_candidates": 0,
+      "chosen": null,
+      "method": null,
+      "top1_confidence": null
+    },
+    {
+      "kind": "negative",
+      "gt": null,
+      "status": "NO_MATCH",
+      "top1": null,
+      "top3": [],
+      "n_candidates": 0,
+      "chosen": null,
+      "method": null,
+      "top1_confidence": null
+    },
+    {
+      "kind": "negative",
+      "gt": null,
+      "status": "NO_MATCH",
+      "top1": null,
+      "top3": [],
+      "n_candidates": 0,
+      "chosen": null,
+      "method": null,
+      "top1_confidence": null
+    },
+    {
+      "kind": "negative",
+      "gt": null,
+      "status": "NO_MATCH",
+      "top1": null,
+      "top3": [],
+      "n_candidates": 0,
+      "chosen": null,
+      "method": null,
+      "top1_confidence": null
+    }
+  ]
+}

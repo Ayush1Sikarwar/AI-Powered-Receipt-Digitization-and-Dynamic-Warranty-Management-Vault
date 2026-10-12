@@ -1,0 +1,237 @@
+{
+  "_meta": {
+    "created": "2026-08-31",
+    "source": "mixed",
+    "note": "Samsung and LG policies are curated from official manufacturer pages (URLs and retrieval dates recorded per policy source; SRS FR-12). Entries for QTech Electronics and VoltHaus Appliances are SAMPLE FIXTURES for development/testing only — those brands are fictitious and the terms are invented; they are labeled as such in the source title and must be removed before production."
+  },
+  "sources": [
+    {
+      "manufacturer": "Samsung",
+      "source_type": "OFFICIAL_WEB",
+      "source_url": "https://www.samsung.com/in/support/warranty/",
+      "source_title": "Samsung India — Product Warranty Information (official)",
+      "source_version": "retrieved 2026-08",
+      "region": "IN",
+      "trust_level": 5,
+      "retrieved_at": "2026-08-31"
+    },
+    {
+      "manufacturer": "LG",
+      "source_type": "OFFICIAL_WEB",
+      "source_url": "https://www.lg.com/in/terms-and-conditons-of-purchase/",
+      "source_title": "LG India — Terms and Conditions of Purchase, clause 5.19 Product Warranties (official)",
+      "source_version": "retrieved 2026-08",
+      "region": "IN",
+      "trust_level": 5,
+      "retrieved_at": "2026-08-31"
+    },
+    {
+      "manufacturer": "QTech Electronics",
+      "source_type": "CURATED_DATASET",
+      "source_url": null,
+      "source_title": "SAMPLE FIXTURE — development only. QTech is a fictitious brand; these terms are invented for testing and are NOT real warranty data.",
+      "region": "IN",
+      "trust_level": 2,
+      "retrieved_at": "2026-08-31"
+    },
+    {
+      "manufacturer": "VoltHaus Appliances",
+      "source_type": "CURATED_DATASET",
+      "source_url": null,
+      "source_title": "SAMPLE FIXTURE — development only. VoltHaus is a fictitious brand; these terms are invented for testing and are NOT real warranty data.",
+      "region": "IN",
+      "trust_level": 2,
+      "retrieved_at": "2026-08-31"
+    }
+  ],
+  "policies": [
+    {
+      "manufacturer": "Samsung",
+      "source_index": 0,
+      "product_category": "Television",
+      "region": "IN",
+      "policy_name": "Samsung India TV & AV Standard Warranty",
+      "policy_version": "2026.08",
+      "effective_from": "2026-01-01",
+      "coverages": [
+        {
+          "component": "FULL_UNIT",
+          "duration_value": 12,
+          "duration_unit": "MONTH",
+          "start_condition": "PURCHASE_DATE",
+          "coverage_description": "LED/LCD/PDP/CTV: repair service by Samsung authorized service center engineer at customer's place, from purchase date."
+        }
+      ]
+    },
+    {
+      "manufacturer": "Samsung",
+      "source_index": 0,
+      "product_category": "Air Conditioning",
+      "region": "IN",
+      "policy_name": "Samsung India Air Conditioner Warranty",
+      "policy_version": "2026.08",
+      "effective_from": "2026-01-01",
+      "coverages": [
+        {
+          "component": "FULL_UNIT",
+          "duration_value": 12,
+          "duration_unit": "MONTH",
+          "start_condition": "PURCHASE_DATE",
+          "coverage_description": "AC standard warranty, repair at customer's place, from purchase date."
+        },
+        {
+          "component": "COMPRESSOR",
+          "duration_value": 60,
+          "duration_unit": "MONTH",
+          "start_condition": "PURCHASE_DATE",
+          "coverage_description": "AC compressor — part warranty only."
+        },
+        {
+          "component": "DIGITAL_INVERTER_COMPRESSOR",
+          "duration_value": 120,
+          "duration_unit": "MONTH",
+          "start_condition": "PURCHASE_DATE",
+          "coverage_description": "Digital inverter compressor — part warranty only."
+        }
+      ]
+    },
+    {
+      "manufacturer": "Samsung",
+      "source_index": 0,
+      "product_category": "Refrigeration",
+      "region": "IN",
+      "policy_name": "Samsung India Refrigerator Warranty",
+      "policy_version": "2026.08",
+      "effective_from": "2026-04-01",
+      "coverages": [
+        {
+          "component": "FULL_UNIT",
+          "duration_value": 12,
+          "duration_unit": "MONTH",
+          "start_condition": "PURCHASE_DATE",
+          "coverage_description": "Refrigerator standard warranty from purchase date."
+        },
+        {
+          "component": "DIGITAL_INVERTER_COMPRESSOR",
+          "duration_value": 120,
+          "duration_unit": "MONTH",
+          "start_condition": "PURCHASE_DATE",
+          "coverage_description": "Digital inverter compressor — part warranty only (purchases from 1st Apr 2026)."
+        }
+      ]
+    },
+    {
+      "manufacturer": "Samsung",
+      "source_index": 0,
+      "product_category": "Laundry",
+      "region": "IN",
+      "policy_name": "Samsung India Washing Machine Warranty",
+      "policy_version": "2026.08",
+      "effective_from": "2026-04-01",
+      "coverages": [
+        {
+          "component": "FULL_UNIT",
+          "duration_value": 24,
+          "duration_unit": "MONTH",
+          "start_condition": "PURCHASE_DATE",
+          "coverage_description": "Top load & front load washing machine standard warranty from purchase date."
+        },
+        {
+          "component": "DIGITAL_INVERTER_MOTOR",
+          "duration_value": 120,
+          "duration_unit": "MONTH",
+          "start_condition": "PURCHASE_DATE",
+          "coverage_description": "Digital inverter motor — part warranty only (purchases from 1st Apr 2026)."
+        }
+      ]
+    },
+    {
+      "manufacturer": "LG",
+      "source_index": 1,
+      "product_category": "Air Conditioning",
+      "region": "IN",
+      "policy_name": "LG India Air Conditioner Warranty",
+      "policy_version": "2026.08",
+      "effective_from": "2026-01-01",
+      "coverages": [
+        {
+          "component": "FULL_UNIT",
+          "duration_value": 12,
+          "duration_unit": "MONTH",
+          "start_condition": "PURCHASE_DATE",
+          "coverage_description": "Standard 1-year product warranty from purchase date."
+        },
+        {
+          "component": "INVERTER_COMPRESSOR",
+          "duration_value": 120,
+          "duration_unit": "MONTH",
+          "start_condition": "PURCHASE_DATE",
+          "coverage_description": "10-year warranty applicable only on the inverter compressor of air conditioners (official terms, clause 5.19)."
+        }
+      ]
+    },
+    {
+      "manufacturer": "LG",
+      "source_index": 1,
+      "product_category": "Laundry",
+      "region": "IN",
+      "policy_name": "LG India Washing Machine Warranty",
+      "policy_version": "2026.08",
+      "effective_from": "2026-01-01",
+      "coverages": [
+        {
+          "component": "FULL_UNIT",
+          "duration_value": 12,
+          "duration_unit": "MONTH",
+          "start_condition": "PURCHASE_DATE",
+          "coverage_description": "Standard 1-year product warranty from purchase date."
+        },
+        {
+          "component": "DIRECT_DRIVE_MOTOR",
+          "duration_value": 120,
+          "duration_unit": "MONTH",
+          "start_condition": "PURCHASE_DATE",
+          "coverage_description": "10-year warranty applicable only on the direct drive motor of washing machines (official terms, clause 5.19)."
+        }
+      ]
+    },
+    {
+      "manufacturer": "QTech Electronics",
+      "source_index": 2,
+      "product_category": "Air Conditioning",
+      "region": "IN",
+      "policy_name": "QTech Sample AC Warranty (fixture)",
+      "policy_version": "1.0",
+      "effective_from": "2024-01-01",
+      "coverages": [
+        {"component": "FULL_UNIT", "duration_value": 12, "duration_unit": "MONTH", "start_condition": "PURCHASE_DATE"},
+        {"component": "COMPRESSOR", "duration_value": 60, "duration_unit": "MONTH", "start_condition": "PURCHASE_DATE"}
+      ]
+    },
+    {
+      "manufacturer": "QTech Electronics",
+      "source_index": 2,
+      "product_category": "Television",
+      "region": "IN",
+      "policy_name": "QTech Sample TV Warranty (fixture)",
+      "policy_version": "1.0",
+      "effective_from": "2024-01-01",
+      "coverages": [
+        {"component": "FULL_UNIT", "duration_value": 12, "duration_unit": "MONTH", "start_condition": "PURCHASE_DATE"}
+      ]
+    },
+    {
+      "manufacturer": "VoltHaus Appliances",
+      "source_index": 3,
+      "product_category": "Refrigeration",
+      "region": "IN",
+      "policy_name": "VoltHaus Sample Fridge Warranty (fixture)",
+      "policy_version": "1.0",
+      "effective_from": "2024-01-01",
+      "coverages": [
+        {"component": "FULL_UNIT", "duration_value": 12, "duration_unit": "MONTH", "start_condition": "PURCHASE_DATE"},
+        {"component": "COMPRESSOR", "duration_value": 120, "duration_unit": "MONTH", "start_condition": "PURCHASE_DATE"}
+      ]
+    }
+  ]
+}

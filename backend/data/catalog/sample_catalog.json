@@ -1,0 +1,263 @@
+{
+  "_meta": {
+    "source": "sample-fixture",
+    "note": "Sample catalog for development and testing of the Product Intelligence matcher. Entries mirror the retail formats this system's documents use. They are NOT scraped retailer data and must be replaced/supplemented with real, sourced catalog exports (via scripts/import_catalog.py, with source attribution) before production. The four Samsung/LG entries are real product lines (names/categories only, no invented model numbers) added to exercise the warranty retrieval flow against the real official warranty policies in data/warranty/warranty_policies.json.",
+    "created": "2026-08-31"
+  },
+  "manufacturers": [
+    {
+      "name": "QTech Electronics",
+      "country": "US"
+    },
+    {
+      "name": "VoltHaus Appliances",
+      "country": "US"
+    },
+    {
+      "name": "FreshFoods",
+      "country": "US"
+    },
+    {
+      "name": "Samsung",
+      "country": "KR"
+    },
+    {
+      "name": "LG Electronics",
+      "country": "KR"
+    }
+  ],
+  "retailers": [
+    {
+      "name": "Nortech Home Appliances",
+      "country": "US"
+    },
+    {
+      "name": "CityMart Grocers",
+      "country": "US"
+    },
+    {
+      "name": "BlueBox Electronics",
+      "country": "US"
+    }
+  ],
+  "products": [
+    {
+      "manufacturer": "QTech Electronics",
+      "brand": "QTech",
+      "canonical_name": "QTech 55-inch 4K QLED Smart TV",
+      "category": "Television",
+      "model_number": "QT55Q90RA",
+      "sku": "QT55Q9-4K",
+      "aliases": [
+        {
+          "text": "QLED 55in 4K TV",
+          "type": "RECEIPT_TEXT"
+        },
+        {
+          "text": "55IN QLED TV QT55",
+          "type": "RECEIPT_TEXT"
+        }
+      ]
+    },
+    {
+      "manufacturer": "QTech Electronics",
+      "brand": "QTech",
+      "canonical_name": "QTech Inverter Split AC 1.5 Ton",
+      "category": "Air Conditioning",
+      "model_number": "AR15FSSY",
+      "sku": "QT-AC-15T",
+      "aliases": [
+        {
+          "text": "SPLIT AC 1.5T",
+          "type": "RECEIPT_TEXT"
+        },
+        {
+          "text": "Inverter Split AC 1.5 Ton",
+          "type": "RECEIPT_TEXT"
+        }
+      ]
+    },
+    {
+      "manufacturer": "QTech Electronics",
+      "brand": "QTech",
+      "canonical_name": "QTech Front Load Washing Machine 8kg",
+      "category": "Laundry",
+      "model_number": "WF80FL",
+      "sku": "QT-WF-8K",
+      "aliases": [
+        {
+          "text": "Front Load Washer 8kg",
+          "type": "RECEIPT_TEXT"
+        }
+      ]
+    },
+    {
+      "manufacturer": "QTech Electronics",
+      "brand": "QTech",
+      "canonical_name": "QTech Air Fryer 5.5L Digital",
+      "category": "Small Appliances",
+      "model_number": "AF550D",
+      "sku": "QT-AF-55",
+      "aliases": [
+        {
+          "text": "Air Fryer 5.5L",
+          "type": "RECEIPT_TEXT"
+        }
+      ]
+    },
+    {
+      "manufacturer": "VoltHaus Appliances",
+      "brand": "VoltHaus",
+      "canonical_name": "VoltHaus 250L No-Frost Fridge",
+      "category": "Refrigeration",
+      "model_number": "VF250NF",
+      "sku": "VH-FR-250",
+      "aliases": [
+        {
+          "text": "No-Frost Fridge 250L",
+          "type": "RECEIPT_TEXT"
+        }
+      ]
+    },
+    {
+      "manufacturer": "QTech Electronics",
+      "brand": "QTech",
+      "canonical_name": "QTech Mechanical Keyboard K870",
+      "category": "Peripherals",
+      "model_number": "K870",
+      "sku": "QT-KB-870",
+      "aliases": [
+        {
+          "text": "MECH KEYBOARD K870",
+          "type": "RECEIPT_TEXT"
+        },
+        {
+          "text": "Mechanical Keyboard K870",
+          "type": "RECEIPT_TEXT"
+        }
+      ]
+    },
+    {
+      "manufacturer": "QTech Electronics",
+      "brand": "QTech",
+      "canonical_name": "QTech 27in Gaming Monitor 144Hz",
+      "category": "Displays",
+      "model_number": "NM27G",
+      "sku": "QT-MN-27",
+      "aliases": [
+        {
+          "text": "27in Gaming Monitor",
+          "type": "RECEIPT_TEXT"
+        }
+      ]
+    },
+    {
+      "manufacturer": "FreshFoods",
+      "brand": "FreshFoods",
+      "canonical_name": "FreshFoods Whole Milk 1L",
+      "category": "Dairy",
+      "model_number": null,
+      "sku": "FF-MILK-1L",
+      "aliases": [
+        {
+          "text": "Whole Milk 1L",
+          "type": "RECEIPT_TEXT"
+        }
+      ]
+    },
+    {
+      "manufacturer": "FreshFoods",
+      "brand": "FreshFoods",
+      "canonical_name": "FreshFoods Sourdough Bread 500g",
+      "category": "Bakery",
+      "model_number": null,
+      "sku": "FF-BRD-500",
+      "aliases": [
+        {
+          "text": "Sourdough Bread 500g",
+          "type": "RECEIPT_TEXT"
+        }
+      ]
+    },
+    {
+      "manufacturer": "FreshFoods",
+      "brand": "FreshFoods",
+      "canonical_name": "FreshFoods Cold Brew Coffee 355ml",
+      "category": "Beverages",
+      "model_number": null,
+      "sku": "FF-CBW-355",
+      "aliases": [
+        {
+          "text": "Cold Brew Coffee 355ml",
+          "type": "RECEIPT_TEXT"
+        }
+      ]
+    },
+    {
+      "manufacturer": "Samsung",
+      "brand": "Samsung",
+      "canonical_name": "Samsung 55-inch QLED 4K Smart TV",
+      "category": "Television"
+    },
+    {
+      "manufacturer": "Samsung",
+      "brand": "Samsung",
+      "canonical_name": "Samsung Digital Inverter Split AC 1.5 Ton",
+      "category": "Air Conditioning"
+    },
+    {
+      "manufacturer": "LG Electronics",
+      "brand": "LG",
+      "canonical_name": "LG Smart Inverter Split AC 1.5 Ton",
+      "category": "Air Conditioning"
+    },
+    {
+      "manufacturer": "LG Electronics",
+      "brand": "LG",
+      "canonical_name": "LG Front Load Washing Machine 8kg",
+      "category": "Laundry"
+    }
+  ],
+  "catalog_entries": [
+    {
+      "retailer": "Nortech Home Appliances",
+      "product": "QTech Inverter Split AC 1.5 Ton",
+      "catalog_sku": "NT-AC15",
+      "catalog_model": "AR15FSSY",
+      "catalog_name": "Inverter Split AC 1.5 Ton"
+    },
+    {
+      "retailer": "Nortech Home Appliances",
+      "product": "QTech Front Load Washing Machine 8kg",
+      "catalog_sku": "NT-WF8",
+      "catalog_model": "WF80FL",
+      "catalog_name": "Front Load Washing Machine 8kg"
+    },
+    {
+      "retailer": "BlueBox Electronics",
+      "product": "QTech Mechanical Keyboard K870",
+      "catalog_sku": "BX-K870",
+      "catalog_model": "K870",
+      "catalog_name": "Mechanical Keyboard K870"
+    },
+    {
+      "retailer": "BlueBox Electronics",
+      "product": "QTech 27in Gaming Monitor 144Hz",
+      "catalog_sku": "BX-NM27",
+      "catalog_model": "NM27G",
+      "catalog_name": "Gaming Monitor 27in 144Hz"
+    },
+    {
+      "retailer": "CityMart Grocers",
+      "product": "FreshFoods Whole Milk 1L",
+      "catalog_sku": "CM-MILK1L",
+      "catalog_name": "Whole Milk 1L"
+    },
+    {
+      "retailer": "CityMart Grocers",
+      "product": "FreshFoods Cold Brew Coffee 355ml",
+      "catalog_sku": "CM-CBW355",
+      "catalog_name": "Cold Brew Coffee 355ml"
+    }
+  ]
+}

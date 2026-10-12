@@ -1,0 +1,170 @@
+# WarrantyVault AI — PRODUCTION stack (TSD §51).
+#
+# Usage:
+#   cp infrastructure/environments/production.env.example .env.production
+#   # edit every value (secrets generated with `openssl rand -hex 32`)
+#   infrastructure/nginx/generate-certs.sh   # or mount real CA certs
+#   docker compose -f infrastructure/docker/docker-compose.prod.yml --env-file .env.production up -d
+#
+# Rules encoded here:
+#   - postgres/redis/backend bind to the internal network only (no ports:
+#     for them); only the edge (frontend nginx) publishes 80/443.
+#   - Every secret comes from the env file — there are NO defaults in this
+#     file, and the app refuses to boot in production with weak ones.
+#   - Migrations run as a one-shot service BEFORE the API starts
+#     (depends_on condition: service_completed_successfully).
+#   - Nightly backups via the `backup` profile:
+#     docker compose ... --profile backup up -d
+
+name: warranty-vault-prod
+
+x-backend-env: &backend-env
+  APP_ENV: production
+  LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+  DEBUG: "false"
+  DATABASE_URL: "${DATABASE_URL:?DATABASE_URL is required}"
+  REDIS_URL: "${REDIS_URL:?REDIS_URL is required}"
+  AUTH_SECRET: "${AUTH_SECRET:?AUTH_SECRET is required (openssl rand -hex 32)}"
+  CORS_ORIGINS: "${CORS_ORIGINS:?CORS_ORIGINS is required (the production origin)}"
+  FRONTEND_BASE_URL: "${FRONTEND_BASE_URL:?FRONTEND_BASE_URL is required}"
+  # Operations (TSD §40/§51): metrics, secure headers, worker monitoring,
+  # trusted-proxy client IP (X-Forwarded-For from nginx).
+  METRICS_ENABLED: "true"
+  SECURITY_HEADERS_ENABLED: "true"
+  HEALTH_CHECK_WORKER: "true"
+  TRUST_PROXY: "true"
+  # Object storage.
+  STORAGE_BACKEND: "${STORAGE_BACKEND:-s3}"
+  STORAGE_LOCAL_ROOT: /srv/data/storage
+  S3_ENDPOINT_URL: "${S3_ENDPOINT_URL:-}"
+  S3_BUCKET: "${S3_BUCKET:-warranty-vault-prod}"
+  S3_REGION: "${S3_REGION:-us-east-1}"
+  S3_ACCESS_KEY: "${S3_ACCESS_KEY:-}"
+  S3_SECRET_KEY: "${S3_SECRET_KEY:-}"
+  # Email.
+  EMAIL_PROVIDER: "${EMAIL_PROVIDER:-smtp}"
+  SMTP_HOST: "${SMTP_HOST:-}"
+  SMTP_PORT: "${SMTP_PORT:-587}"
+  SMTP_USER: "${SMTP_USER:-}"
+  SMTP_PASSWORD: "${SMTP_PASSWORD:-}"
+  SMTP_FROM: "${SMTP_FROM:-no-reply@warrantyvault.example}"
+
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:?POSTGRES_USER is required}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}"
+      POSTGRES_DB: "${POSTGRES_DB:?POSTGRES_DB is required}"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ../postgres/production-postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    # Least privilege: no published ports, no extra privileges.
+    cap_drop: [ALL]
+    cap_add: [CHOWN, SETGID, SETUID, FOWNER, DAC_OVERRIDE, DAC_READ_SEARCH]
+    mem_limit: 1g
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    # AOF persistence so rate-limit windows and the worker heartbeat survive
+    # restarts; password required (REDIS_URL carries it).
+    command: redis-server --requirepass "${REDIS_PASSWORD:?REDIS_PASSWORD is required}" --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $${REDIS_PASSWORD} ping | grep PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    cap_drop: [ALL]
+    mem_limit: 512m
+
+  # One-shot migration runner (TSD §54/§51 migration strategy): applies
+  # Alembic to head before the API accepts traffic; a failed migration fails
+  # the stack instead of half-migrating under load.
+  migrate:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/backend.Dockerfile
+    restart: "no"
+    environment: *backend-env
+    command: alembic upgrade head
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/backend.Dockerfile
+    restart: unless-stopped
+    environment: *backend-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    # Internal only — the edge proxies /api here.
+    mem_limit: 1g
+    cpus: 2
+
+  worker:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/backend.Dockerfile
+    restart: unless-stopped
+    environment: *backend-env
+    command: python -m app.workers.run
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    mem_limit: 2g
+    cpus: 2
+
+  # Edge: TLS termination + secure headers + SPA + /api proxy.
+  frontend:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/frontend.Dockerfile
+      target: runtime
+      args:
+        VITE_API_BASE: /api/v1
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ${CERT_DIR:-../nginx/certs}:/etc/nginx/certs:ro
+    depends_on:
+      - backend
+
+  # Nightly backup (enable with --profile backup): dumps the database and
+  # packs the local storage tree with a manifest + retention (scripts/backup.py).
+  backup:
+    profiles: ["backup"]
+    image: warranty-vault-backend
+    restart: "no"
+    environment: *backend-env
+    volumes:
+      - backups:/srv/data/backups
+      - /etc/localtime:/etc/localtime:ro
+    command: sh -c 'while true; do python scripts/backup.py --out /srv/data/backups --keep 14; sleep 86400; done'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  backups:

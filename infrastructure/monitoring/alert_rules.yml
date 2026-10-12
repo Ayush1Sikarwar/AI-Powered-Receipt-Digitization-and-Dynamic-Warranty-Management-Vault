@@ -1,0 +1,80 @@
+# WarrantyVault AI — Prometheus alert rules (TSD §40/§51 alerting).
+# Mapped to the operational concerns: worker liveness, queue backlog,
+# error rate, latency, and readiness.
+
+groups:
+  - name: warranty-vault-availability
+    rules:
+      - alert: WorkerHeartbeatMissing
+        expr: warrantyvault_worker_heartbeat_age_seconds > 120 or warrantyvault_worker_heartbeat_age_seconds != warrantyvault_worker_heartbeat_age_seconds
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "Worker heartbeat stale or missing"
+          description: "No worker heartbeat for >120s. Document processing, alerts, and retention sweeps are not running."
+
+      - alert: ReadinessDegraded
+        expr: probe_success{path="/health/ready"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "Readiness endpoint not 200"
+          description: "The API reports degraded (database/worker/queue check failed)."
+
+  - name: warranty-vault-queue
+    rules:
+      - alert: JobQueueBacklog
+        expr: warrantyvault_jobs{status="QUEUED"} > 100
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Job queue backlog"
+          description: "More than 100 jobs queued for >5m — scale workers or investigate handler failures."
+
+      - alert: DeadJobsIncreasing
+        expr: increase(warrantyvault_jobs{status="DEAD"}[15m]) > 0
+        for: 0m
+        labels: { severity: warning }
+        annotations:
+          summary: "New dead jobs"
+          description: "Jobs exceeded max attempts. Check /admin/failed-processing and retry after fix."
+
+  - name: warranty-vault-errors
+    rules:
+      - alert: High5xxRate
+        expr: sum(rate(warrantyvault_requests_total{status="5xx"}[5m])) / sum(rate(warrantyvault_requests_total[5m])) > 0.05
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "5xx error rate above 5%"
+          description: "Sustained server errors on the API."
+
+      - alert: High429Rate
+        expr: sum(rate(warrantyvault_requests_total{status="4xx"}[5m])) > 20
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "Elevated 4xx/429 rate"
+          description: "Possible client misbehavior or rate-limit pressure."
+
+  - name: warranty-vault-latency
+    rules:
+      - alert: ApiP95High
+        expr: |
+          histogram_quantile(0.95, sum(rate(warrantyvault_request_latency_ms_bucket[5m])) by (le)) > 500
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "API p95 latency above 500ms"
+          description: "Non-AI API p95 is above the TSD §48 target. Check database and upstream dependencies."
+
+  - name: warranty-vault-storage
+    rules:
+      - alert: BackupNotFresh
+        # Exposed by the backup sidecar as warrantyvault_last_backup_timestamp.
+        expr: time() - warrantyvault_last_backup_timestamp > 90000
+        for: 0m
+        labels: { severity: critical }
+        annotations:
+          summary: "No backup in the last 25 hours"
+          description: "The nightly backup did not run or failed. Verify the backup profile/cron."
