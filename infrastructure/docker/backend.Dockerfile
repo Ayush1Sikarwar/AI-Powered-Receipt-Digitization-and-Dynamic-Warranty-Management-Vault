@@ -6,7 +6,7 @@
 # - no dev extras, no source outside the app tree
 # - image healthcheck (liveness; readiness is probed at /health/ready)
 # - tesseract + glib required by the OCR/enhancement pipeline
-FROM python:3.12-slim AS base
+FROM python:3.12-bookworm AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
