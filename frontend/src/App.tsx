@@ -1,5 +1,5 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
-import { useAuth } from './hooks/useAuth';
+import { Link, Navigate, Route, Routes } from 'react-router-dom';
+import { useAuth, type SessionError } from './hooks/useAuth';
 import AppShell from './layouts/AppShell';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -16,9 +16,41 @@ import Notifications from './pages/Notifications';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 
+function SessionProblem({ error, onRetry }: { error: SessionError; onRetry: () => void }) {
+  const unreachable = error.kind === 'unreachable';
+  return (
+    <div className="mx-auto max-w-md p-10">
+      <div className="card">
+        <h1 className="text-lg font-semibold text-slate-900">
+          {unreachable ? "Can't reach the server" : 'You were signed out'}
+        </h1>
+        <p className="mt-2 text-sm text-slate-600">
+          {unreachable
+            ? 'Your session is still saved on this device. Check that the backend is running, then retry.'
+            : 'The server rejected your saved session:'}
+        </p>
+        <p className="mt-2 break-words rounded-md bg-slate-50 px-3 py-2 font-mono text-xs text-slate-600">
+          {error.message}
+        </p>
+        <div className="mt-4 flex gap-3">
+          {unreachable && (
+            <button className="btn-primary" onClick={onRetry}>
+              Retry
+            </button>
+          )}
+          <Link className={unreachable ? 'btn-secondary' : 'btn-primary'} to="/login">
+            Log in again
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function RequireAuth({ children }: { children: JSX.Element }) {
-  const { user, initializing } = useAuth();
+  const { user, initializing, sessionError, refresh } = useAuth();
   if (initializing) return <div className="p-10 text-slate-500">Loading…</div>;
+  if (!user && sessionError) return <SessionProblem error={sessionError} onRetry={() => void refresh()} />;
   if (!user) return <Navigate to="/login" replace />;
   return children;
 }
