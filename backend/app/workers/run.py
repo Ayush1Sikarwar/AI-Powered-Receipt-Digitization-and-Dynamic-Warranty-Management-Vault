@@ -14,7 +14,7 @@ from app.core.logging import setup_logging
 from app.db.session import SessionLocal
 from app.models.job import JobStatus
 from app.workers import handlers
-from app.workers.jobs import claim_next_job, complete_job, fail_job
+from app.workers.jobs import claim_next_job, complete_job, fail_job, recover_stale_jobs
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +51,21 @@ def main() -> None:
     signal.signal(signal.SIGINT, _handle_signal)
     logger.info("worker_started")
 
+    # Recover jobs left RUNNING by a crashed worker before starting the loop.
+    db = SessionLocal()
+    try:
+        recovered = recover_stale_jobs(db)
+        if recovered:
+            logger.info("startup_stale_jobs_recovered count=%s", recovered)
+    except Exception:  # noqa: BLE001 - recovery must not prevent worker startup
+        logger.exception("startup_stale_job_recovery_failed")
+    finally:
+        db.close()
+
     sweep_counter = 0
     alert_interval = max(1, settings.notification_sweep_seconds)
+    stale_recovery_interval = 60  # recover stale jobs every ~60s of idle time
+    revocation_purge_interval = 60  # purge expired access-token revocations every ~60s
     while _running:
         _beat()
         db = SessionLocal()
@@ -81,6 +94,28 @@ def main() -> None:
                             logger.info("notification_sweep %s", result)
                     except Exception:  # noqa: BLE001 - sweep must not kill the worker
                         logger.exception("notification_sweep_failed")
+                # Periodic stale-job recovery: resurrect RUNNING jobs left
+                # by a crashed worker so documents do not stay stuck.
+                if sweep_counter % stale_recovery_interval == 0:
+                    try:
+                        recovered = recover_stale_jobs(db)
+                        if recovered:
+                            logger.info("periodic_stale_jobs_recovered count=%s", recovered)
+                    except Exception:  # noqa: BLE001 - recovery must not kill the worker
+                        logger.exception("periodic_stale_job_recovery_failed")
+                # Purge expired access-token revocations so the revocation
+                # table stays bounded (Issue #3: access-token revocation).
+                # Failures are logged only — never crash the worker or
+                # interrupt unrelated maintenance.
+                if sweep_counter % revocation_purge_interval == 0:
+                    from app.services.auth_service import purge_expired_revocations
+
+                    try:
+                        purged = purge_expired_revocations(db)
+                        if purged:
+                            logger.info("revocation_purge purged=%s", purged)
+                    except Exception:  # noqa: BLE001 - purge must not kill the worker
+                        logger.exception("revocation_purge_failed")
                 time.sleep(1.0)
                 continue
             handler = handlers.HANDLERS.get(job.type)
