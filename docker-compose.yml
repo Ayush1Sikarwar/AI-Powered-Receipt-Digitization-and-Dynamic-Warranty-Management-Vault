@@ -46,8 +46,8 @@ services:
 
   backend:
     build:
-      context: ./backend
-      dockerfile: ../infrastructure/docker/backend.Dockerfile
+      context: .
+      dockerfile: infrastructure/docker/backend.Dockerfile
     environment:
       APP_ENV: development
       DATABASE_URL: postgresql+psycopg://warranty:warranty_dev_pw@postgres:5432/warranty_vault
@@ -66,8 +66,8 @@ services:
 
   worker:
     build:
-      context: ./backend
-      dockerfile: ../infrastructure/docker/backend.Dockerfile
+      context: .
+      dockerfile: infrastructure/docker/backend.Dockerfile
     environment:
       APP_ENV: development
       DATABASE_URL: postgresql+psycopg://warranty:warranty_dev_pw@postgres:5432/warranty_vault
@@ -79,13 +79,12 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: ../infrastructure/docker/frontend.Dockerfile
+      context: .
+      dockerfile: infrastructure/docker/frontend.Dockerfile
     environment:
-      VITE_API_BASE: http://localhost:8000/api/v1
+      VITE_API_BASE: "http://localhost:8000/api/v1"
     ports:
       - "5173:5173"
-
 volumes:
   pgdata:
   miniodata:
