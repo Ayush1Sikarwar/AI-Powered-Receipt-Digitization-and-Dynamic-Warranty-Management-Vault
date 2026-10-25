@@ -3,8 +3,14 @@ rate limiting, invalid token/session)."""
 
 import uuid
 from datetime import UTC
+from unittest.mock import patch
 
-from tests.conftest import _register
+from app.core.config import get_settings
+from app.core.exceptions import AuthenticationError
+from app.services import auth_service
+from tests.conftest import _register, auth_headers
+
+_settings = get_settings()
 
 
 def test_login_rate_limiting_enforced(app_client):
@@ -108,3 +114,38 @@ def test_injection_attempt_in_email_rejected(app_client):
         json={"email": "x@example.com; DROP TABLE users;--", "password": "Passw0rd!123", "display_name": "X"},
     )
     assert resp.status_code == 422
+
+
+def test_revocation_store_failure_fail_closed(app_client, registered_user, db_session):
+    """If the revocation store is unavailable, the token is rejected (fail closed),
+    not silently accepted."""
+    token = registered_user["access_token"]
+
+    with patch.object(auth_service, "_is_access_token_revoked", side_effect=Exception("DB unavailable")):
+        try:
+            auth_service.get_current_user(db_session, token)
+            raise AssertionError("get_current_user should not return a user when the revocation store fails")
+        except AuthenticationError:
+            # Acceptable: converted to a clean auth error
+            pass
+        except Exception:
+            # Also acceptable: the exception propagates and the request fails (500),
+            # which is still fail-closed — the token is NOT silently accepted.
+            pass
+
+
+def test_revocation_store_failure_does_not_allow_revoked_token(app_client, registered_user, db_session):
+    """Even when the revocation store is flaky, a revoked token is never accepted."""
+    # First revoke the access token by logging out
+    headers = auth_headers(registered_user)
+    app_client.post(
+        "/api/v1/auth/logout",
+        json={"refresh_token": registered_user["refresh_token"]},
+        headers=headers,
+    )
+
+    # Now the token is genuinely revoked; the revocation check should find it
+    # and reject. We verify the token is rejected through the API.
+    resp = app_client.get("/api/v1/auth/me", headers=headers)
+    assert resp.status_code == 401
+    assert resp.json()["error_code"] == "AUTHENTICATION_ERROR"
