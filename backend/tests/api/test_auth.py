@@ -1,8 +1,14 @@
 """API tests: full authentication flow (FR-01, TSD §17)."""
 
 import uuid
+from datetime import UTC, datetime
 
+import jwt
+
+from app.core.config import get_settings
 from tests.conftest import _login, _register, auth_headers
+
+_settings = get_settings()
 
 
 def test_register_login_me_logout_flow(app_client):
@@ -166,3 +172,80 @@ def test_error_envelope_has_request_id(app_client):
     assert body["error_code"] == "AUTHENTICATION_ERROR"
     assert body["request_id"]
     assert resp.headers.get("X-Request-ID") == body["request_id"]
+
+
+def test_access_token_valid_before_logout(app_client, registered_user):
+    """A valid access token can access protected endpoints before logout."""
+    headers = auth_headers(registered_user)
+    resp = app_client.get("/api/v1/auth/me", headers=headers)
+    assert resp.status_code == 200
+    assert resp.json()["email"] == registered_user["email"]
+
+
+def test_logout_revokes_access_token(app_client, registered_user):
+    """After logout, the access token is rejected on protected endpoints."""
+    headers = auth_headers(registered_user)
+
+    # Token works before logout
+    assert app_client.get("/api/v1/auth/me", headers=headers).status_code == 200
+
+    # Logout (revokes both the access token JTI and the refresh token)
+    resp = app_client.post(
+        "/api/v1/auth/logout",
+        json={"refresh_token": registered_user["refresh_token"]},
+        headers=headers,
+    )
+    assert resp.status_code == 200
+
+    # Access token reuse after logout -> 401
+    resp = app_client.get("/api/v1/auth/me", headers=headers)
+    assert resp.status_code == 401
+    assert resp.json()["error_code"] == "AUTHENTICATION_ERROR"
+
+
+def test_expired_access_token_rejected(app_client, registered_user):
+    """An expired JWT is rejected even if its signature is valid."""
+    now = datetime.now(UTC)
+    expired = jwt.encode(
+        {
+            "sub": str(registered_user["user"]["id"]),
+            "role": registered_user["user"]["role"],
+            "jti": uuid.uuid4().hex,
+            "iat": int(now.timestamp()) - 600,
+            "exp": int(now.timestamp()) - 300,  # expired 5 minutes ago
+            "type": "access",
+        },
+        _settings.auth_secret,
+        algorithm=_settings.auth_algorithm,
+    )
+    resp = app_client.get(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {expired}"}
+    )
+    assert resp.status_code == 401
+    assert resp.json()["error_code"] == "AUTHENTICATION_ERROR"
+
+
+def test_refresh_issues_new_access_token_with_fresh_jti(app_client, registered_user):
+    """Refresh rotation issues a new access token with a new JTI."""
+    headers = auth_headers(registered_user)
+
+    # Log out to revoke the current access token
+    app_client.post(
+        "/api/v1/auth/logout",
+        json={"refresh_token": registered_user["refresh_token"]},
+        headers=headers,
+    )
+
+    # Refresh gets a new token pair
+    r = app_client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": registered_user["refresh_token"]},
+    )
+    assert r.status_code == 401  # refresh token was revoked by logout
+
+    # But we can log in again to get a fresh token
+    login = _login(app_client, registered_user["email"])
+    new_headers = auth_headers(login)
+    assert app_client.get("/api/v1/auth/me", headers=new_headers).status_code == 200
+    assert login["access_token"] != registered_user["access_token"]
+    assert login["jti"] != registered_user["jti"]
