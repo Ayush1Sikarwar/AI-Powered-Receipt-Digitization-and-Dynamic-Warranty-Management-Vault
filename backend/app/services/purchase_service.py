@@ -201,12 +201,20 @@ def create_purchase(
     # Warranty intelligence (Phase 4): map items to warranty policies and
     # compute coverage timelines. Best-effort — a warranty failure must not
     # fail the purchase itself; the user can still see & fix the mapping.
+    # Warranty changes are committed independently so an alert-scheduling
+    # failure cannot roll them back, and a warranty failure cannot leave
+    # partial mapping/timeline records (db.rollback() undoes the flush).
     try:
         _sync_warranties(db, purchase, user, request_id=request_id, reason="purchase_created")
-        _schedule_alerts_best_effort(db, purchase.id)
+        db.commit()  # commit warranty mappings/timelines independently
     except Exception:  # noqa: BLE001
         logger.exception("warranty_sync_failed purchase_id=%s reason=purchase_created", purchase.id)
-        db.rollback()
+        db.rollback()  # roll back uncommitted warranty changes only; purchase is safe
+
+    # Alert scheduling (SRS FR-15): best-effort; never fails the purchase or
+    # the warranty mapping that was just committed. `_schedule_alerts_best_effort`
+    # rolls back its own uncommitted notification changes on failure.
+    _schedule_alerts_best_effort(db, purchase.id)
 
     audit_helper.audit(
         db,
@@ -352,14 +360,22 @@ def update_purchase(
     db.refresh(purchase)
 
     # Warranty re-sync: item/product/region/date changes can change the
-    # applicable policy and the computed coverage windows.
+    # applicable policy and the computed coverage windows. Committed
+    # independently so an alert-scheduling failure cannot roll back
+    # successfully committed warranty synchronization (same pattern as
+    # create_purchase).
     if changed:
         try:
             _sync_warranties(db, purchase, user, request_id=request_id, reason="purchase_updated")
-            _schedule_alerts_best_effort(db, purchase.id)
+            db.commit()  # commit warranty mappings/timelines independently
         except Exception:  # noqa: BLE001
             logger.exception("warranty_sync_failed purchase_id=%s reason=purchase_updated", purchase.id)
-            db.rollback()
+            db.rollback()  # roll back uncommitted warranty changes only; purchase is safe
+
+    # Alert scheduling (SRS FR-15): best-effort; never fails the purchase or
+    # the warranty mapping that was just committed.
+    if changed:
+        _schedule_alerts_best_effort(db, purchase.id)
 
     audit_helper.audit(
         db,
