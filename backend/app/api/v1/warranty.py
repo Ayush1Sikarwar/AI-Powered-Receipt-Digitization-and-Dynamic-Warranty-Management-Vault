@@ -94,16 +94,20 @@ def review_warranty(
         user=user,
         request_id=get_request_id(request),
     )
-    db.commit()
-    # SRS FR-15: a confirmed/overridden mapping can create new timelines —
-    # schedule reminders immediately (best-effort; the worker sweeps too).
+    db.commit()  # commit the warranty review — this is the transaction boundary
+
+    # SRS FR-15: schedule reminders immediately (best-effort; the worker
+    # sweeps too). Runs in a separate try block WITHOUT rollback: a
+    # scheduling failure must never roll back the already-committed
+    # warranty review.
     try:
         from app.services.notification_service import schedule_warranty_reminders
 
         schedule_warranty_reminders(db)
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.exception("alert_scheduling_failed purchase_id=%s", purchase_id)
-        db.rollback()
+        # No rollback: the review is already committed. Scheduling is
+        # best-effort and will be retried by the worker's notification sweep.
     return envelope.ok(
         {
             "item_id": body.item_id,
