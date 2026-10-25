@@ -1,8 +1,30 @@
 """Job handlers, one per job type (TSD §31).
 
-Phase 1 wires DOCUMENT_PROCESSING. Later phases add:
-OCR_PROCESSING, PRODUCT_RESOLUTION, WARRANTY_RESOLUTION,
-NOTIFICATION_SCHEDULING, CLAIM_PACKAGE_GENERATION, SOURCE_REFRESH, CLEANUP.
+Registered handlers:
+- DOCUMENT_PROCESSING → runs the full document pipeline (render, OCR,
+  enhancement, classification, extraction, product match, warranty mapping)
+  inline via ``run_document_pipeline``.
+- CLEANUP → hard-purges deleted documents / closed-account data via the
+  data-retention engine.
+
+Job types intentionally NOT registered (no handler):
+
+- OCR_PROCESSING, PRODUCT_RESOLUTION, WARRANTY_RESOLUTION — all performed
+  inline inside ``run_document_pipeline`` (called by the DOCUMENT_PROCESSING
+  handler). No separate async stage is needed.
+- NOTIFICATION_SCHEDULING — reminder scheduling runs inline in the worker
+  loop via ``notification_sweep`` (see ``app/workers/run.py``), not as a
+  discrete job.
+- CLAIM_PACKAGE_GENERATION — not yet implemented as an async job; no code
+  enqueues this type.
+- SOURCE_REFRESH — warranty source refresh runs synchronously in the admin
+  API (``refresh_warranty_source``), not as a background job.
+
+These types are defined in ``app/models/job.py`` JobType for completeness
+and future phases, but nothing in the application enqueues them, so the
+worker's "no handler" error path in ``app/workers/run.py`` cannot trigger
+in normal operation. Do not add placeholder handlers — that would create
+the illusion of implemented functionality that does not exist.
 """
 
 import logging
