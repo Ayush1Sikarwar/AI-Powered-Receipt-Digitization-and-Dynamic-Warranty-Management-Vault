@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 from datetime import UTC, datetime
@@ -77,14 +78,70 @@ def restore_backup(
             "manifest": manifest,
         }
 
-    pg_env = {**os.environ, "PGCONNECT_TIMEOUT": "60", **{k: v for k, v in parts.items() if k != "dbname"}}
-    proc = subprocess.run(
-        ["pg_restore", "--clean", "--if-exists", "--no-owner", "-d", target_db, str(dump_path)],
-        env=pg_env,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+
+    pg_env = {
+        **os.environ,
+        "PGCONNECT_TIMEOUT": "60",
+        **{k: v for k, v in parts.items() if k != "dbname"},
+    }
+
+    if shutil.which("pg_restore"):
+        proc = subprocess.run(
+            [
+                "pg_restore",
+                "--clean",
+                "--if-exists",
+                "--no-owner",
+                "-d",
+                target_db,
+                str(dump_path),
+            ],
+            env=pg_env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        restore_error = proc.stderr
+
+    else:
+        container = os.environ.get(
+            "POSTGRES_CONTAINER",
+            "warrantyvaultai-postgres-1",
+        )
+
+        proc = subprocess.run(
+            [
+                "docker",
+                "exec",
+                "-i",
+                "-e",
+                f"PGUSER={parts['PGUSER']}",
+                "-e",
+                f"PGPASSWORD={parts['PGPASSWORD']}",
+                "-e",
+                "PGCONNECT_TIMEOUT=60",
+                container,
+                "pg_restore",
+                "--clean",
+                "--if-exists",
+                "--no-owner",
+                "-d",
+                target_db,
+            ],
+            input=dump_path.read_bytes(),
+            capture_output=True,
+            check=False,
+        )
+        restore_error = proc.stderr.decode(errors="replace")
+
+    # Verify that the restored schema is available.
+    counts = _table_counts(db_url)
+    if counts.get("users") == -1 or counts.get("warranty_policies") == -1:
+        raise RuntimeError(
+            f"pg_restore verification failed (missing tables): "
+            f"{restore_error.strip()[-500:]}"
+        )
+
     # pg_restore exits non-zero for the expected "does not exist" notices
     # during --clean on a fresh DB; verify by the schema that materialized.
     counts = _table_counts(db_url)
