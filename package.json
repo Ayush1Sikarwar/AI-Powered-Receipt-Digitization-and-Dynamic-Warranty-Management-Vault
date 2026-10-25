@@ -1,0 +1,16 @@
+{
+  "name": "warranty-vault",
+  "private": true,
+  "scripts": {
+    "setup": "npm install && npm --prefix frontend install",
+    "migrate": "cd backend && .venv\\Scripts\\python.exe -m alembic upgrade head",
+    "api": "cd backend && .venv\\Scripts\\python.exe -m uvicorn app.main:app --reload --reload-dir app --port 8000",
+    "worker": "cd backend && .venv\\Scripts\\python.exe -m app.workers.run",
+    "web": "npm --prefix frontend run dev",
+    "dev": "concurrently --kill-others-on-fail -n API,WORKER,WEB -c blue,magenta,green \"npm:api\" \"npm:worker\" \"npm:web\"",
+    "start": "npm run migrate && npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}
