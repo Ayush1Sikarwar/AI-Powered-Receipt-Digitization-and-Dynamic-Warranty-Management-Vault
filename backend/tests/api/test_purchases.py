@@ -1,6 +1,7 @@
 """API tests: purchases + search (TSD §19, SRS FR-14, TSD §55)."""
 
 import uuid
+from unittest.mock import patch
 
 from tests.conftest import _register, auth_headers
 
@@ -155,3 +156,191 @@ def test_filter_by_document_id(app_client, registered_user):
 
     unfiltered = app_client.get("/api/v1/purchases", headers=headers)
     assert unfiltered.json()["data"]["total"] >= 2
+
+
+def test_create_purchase_normal_persists(app_client, registered_user):
+    """Normal purchase creation: purchase is persisted and retrievable."""
+    headers = auth_headers(registered_user)
+    body = {
+        "purchase_date": "2026-08-01",
+        "currency": "usd",
+        "total": 1299.99,
+        "items": [{"product_name": "55in LED TV", "model_number": "QE55Q60", "quantity": 1, "unit_price": 1299.99}],
+    }
+    resp = app_client.post("/api/v1/purchases", json=body, headers=headers)
+    assert resp.status_code == 201, resp.text
+    purchase = resp.json()["data"]["purchase"]
+    assert purchase["id"] is not None
+    assert purchase["purchase_date"] == "2026-08-01"
+    assert purchase["total"] == 1299.99
+    assert len(purchase["items"]) == 1
+
+    # Purchase is retrievable (persisted across the session boundary).
+    got = app_client.get(f"/api/v1/purchases/{purchase['id']}", headers=headers)
+    assert got.status_code == 200, got.text
+    assert got.json()["data"]["purchase"]["id"] == purchase["id"]
+
+
+def test_create_purchase_alert_failure_does_not_break_purchase(app_client, registered_user):
+    """Alert scheduling failure must not roll back the purchase."""
+    headers = auth_headers(registered_user)
+    body = {
+        "purchase_date": "2026-08-01",
+        "currency": "usd",
+        "total": 1299.99,
+        "items": [{"product_name": "55in LED TV", "model_number": "QE55Q60", "quantity": 1, "unit_price": 1299.99}],
+    }
+    with patch(
+        "app.services.notification_service.schedule_warranty_reminders",
+        side_effect=Exception("alert scheduling boom"),
+    ):
+        resp = app_client.post("/api/v1/purchases", json=body, headers=headers)
+    assert resp.status_code == 201, resp.text
+    purchase = resp.json()["data"]["purchase"]
+
+    # Purchase is still retrievable despite alert failure.
+    got = app_client.get(f"/api/v1/purchases/{purchase['id']}", headers=headers)
+    assert got.status_code == 200, got.text
+    assert got.json()["data"]["purchase"]["id"] == purchase["id"]
+
+
+def test_create_purchase_warranty_failure_does_not_break_purchase(app_client, registered_user):
+    """Warranty sync failure must not roll back the purchase.
+
+    Warranty mapping/timeline changes are rolled back independently; the
+    purchase itself remains committed.
+    """
+    headers = auth_headers(registered_user)
+    body = {
+        "purchase_date": "2026-08-01",
+        "currency": "usd",
+        "total": 1299.99,
+        "items": [{"product_name": "55in LED TV", "model_number": "QE55Q60", "quantity": 1, "unit_price": 1299.99}],
+    }
+    with patch(
+        "app.warranty.service.sync_purchase_warranties",
+        side_effect=Exception("warranty sync boom"),
+    ):
+        resp = app_client.post("/api/v1/purchases", json=body, headers=headers)
+    assert resp.status_code == 201, resp.text
+    purchase = resp.json()["data"]["purchase"]
+
+    # Purchase is still retrievable despite warranty failure.
+    got = app_client.get(f"/api/v1/purchases/{purchase['id']}", headers=headers)
+    assert got.status_code == 200, got.text
+    assert got.json()["data"]["purchase"]["id"] == purchase["id"]
+
+
+def test_create_purchase_core_validation_failure(app_client, registered_user):
+    """Core purchase validation failure fails the purchase with no record persisted."""
+    headers = auth_headers(registered_user)
+    body = {
+        "purchase_date": "2026-08-01",
+        "retailer_id": 999999,  # non-existent retailer
+        "items": [{"product_name": "TV", "quantity": 1, "unit_price": 10.0}],
+    }
+    resp = app_client.post("/api/v1/purchases", json=body, headers=headers)
+    assert resp.status_code == 422, resp.text
+    assert resp.json()["error_code"] == "VALIDATION_ERROR"
+
+    # No purchase was persisted.
+    listing = app_client.get("/api/v1/purchases", headers=headers)
+    assert listing.json()["data"]["total"] == 0
+
+
+def test_update_purchase_persists_changes(app_client, registered_user):
+    """A successful purchase update persists all changed fields."""
+    headers = auth_headers(registered_user)
+    body = {
+        "purchase_date": "2026-08-01",
+        "currency": "usd",
+        "total": 1299.99,
+        "items": [{"product_name": "55in LED TV", "model_number": "QE55Q60", "quantity": 1, "unit_price": 1299.99}],
+    }
+    created = app_client.post("/api/v1/purchases", json=body, headers=headers)
+    assert created.status_code == 201, created.text
+    purchase_id = created.json()["data"]["purchase"]["id"]
+
+    update = app_client.patch(
+        f"/api/v1/purchases/{purchase_id}",
+        json={"invoice_number": "INV-2026-001", "currency": "EUR", "total": 1499.99},
+        headers=headers,
+    )
+    assert update.status_code == 200, update.text
+    data = update.json()["data"]["purchase"]
+    assert data["invoice_number"] == "INV-2026-001"
+    assert data["currency"] == "EUR"
+    assert data["total"] == 1499.99
+
+    # Changes persist across the session boundary.
+    got = app_client.get(f"/api/v1/purchases/{purchase_id}", headers=headers)
+    assert got.status_code == 200, got.text
+    assert got.json()["data"]["purchase"]["invoice_number"] == "INV-2026-001"
+    assert got.json()["data"]["purchase"]["currency"] == "EUR"
+    assert got.json()["data"]["purchase"]["total"] == 1499.99
+
+
+def test_update_purchase_alert_failure_does_not_break_update(app_client, registered_user):
+    """Alert scheduling failure must not roll back a committed purchase update."""
+    headers = auth_headers(registered_user)
+    body = {
+        "purchase_date": "2026-08-01",
+        "currency": "usd",
+        "total": 1299.99,
+        "items": [{"product_name": "55in LED TV", "model_number": "QE55Q60", "quantity": 1, "unit_price": 1299.99}],
+    }
+    created = app_client.post("/api/v1/purchases", json=body, headers=headers)
+    assert created.status_code == 201, created.text
+    purchase_id = created.json()["data"]["purchase"]["id"]
+
+    with patch(
+        "app.services.notification_service.schedule_warranty_reminders",
+        side_effect=Exception("alert scheduling boom"),
+    ):
+        update = app_client.patch(
+            f"/api/v1/purchases/{purchase_id}",
+            json={"invoice_number": "INV-ALERT-FAIL"},
+            headers=headers,
+        )
+    assert update.status_code == 200, update.text
+    assert update.json()["data"]["purchase"]["invoice_number"] == "INV-ALERT-FAIL"
+
+    # Purchase update is still retrievable despite alert failure.
+    got = app_client.get(f"/api/v1/purchases/{purchase_id}", headers=headers)
+    assert got.status_code == 200, got.text
+    assert got.json()["data"]["purchase"]["invoice_number"] == "INV-ALERT-FAIL"
+
+
+def test_update_purchase_warranty_failure_does_not_break_update(app_client, registered_user):
+    """Warranty sync failure must not roll back a committed purchase update.
+
+    Warranty mapping/timeline changes are rolled back independently; the
+    purchase update itself remains committed.
+    """
+    headers = auth_headers(registered_user)
+    body = {
+        "purchase_date": "2026-08-01",
+        "currency": "usd",
+        "total": 1299.99,
+        "items": [{"product_name": "55in LED TV", "model_number": "QE55Q60", "quantity": 1, "unit_price": 1299.99}],
+    }
+    created = app_client.post("/api/v1/purchases", json=body, headers=headers)
+    assert created.status_code == 201, created.text
+    purchase_id = created.json()["data"]["purchase"]["id"]
+
+    with patch(
+        "app.warranty.service.sync_purchase_warranties",
+        side_effect=Exception("warranty sync boom"),
+    ):
+        update = app_client.patch(
+            f"/api/v1/purchases/{purchase_id}",
+            json={"invoice_number": "INV-WARRANTY-FAIL"},
+            headers=headers,
+        )
+    assert update.status_code == 200, update.text
+    assert update.json()["data"]["purchase"]["invoice_number"] == "INV-WARRANTY-FAIL"
+
+    # Purchase update is still retrievable despite warranty failure.
+    got = app_client.get(f"/api/v1/purchases/{purchase_id}", headers=headers)
+    assert got.status_code == 200, got.text
+    assert got.json()["data"]["purchase"]["invoice_number"] == "INV-WARRANTY-FAIL"
