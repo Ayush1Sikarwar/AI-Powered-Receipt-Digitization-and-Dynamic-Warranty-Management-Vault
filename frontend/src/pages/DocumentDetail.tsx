@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { authorizedDownloadHeaders, deleteDocument, getDerivatives, getDocument, getDocumentStatus } from '../services/documents';
 import { ApiError } from '../services/api';
 import FieldReview from '../components/FieldReview';
@@ -21,6 +21,7 @@ export default function DocumentDetail() {
   const { id } = useParams<{ id: string }>();
   const docId = Number(id);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [previewKind, setPreviewKind] = useState<'original' | 'enhanced'>('original');
   const [deleteMsg, setDeleteMsg] = useState<string | null>(null);
@@ -29,12 +30,15 @@ export default function DocumentDetail() {
     queryKey: ['doc-status', docId],
     queryFn: () => getDocumentStatus(docId),
     refetchInterval: (q) => (q.state.data?.processing ? 1500 : false),
+    retry: (count, err) => !(err instanceof ApiError && err.status === 404) && count < 2,
   });
 
   const detail = useQuery({
     queryKey: ['doc', docId],
     queryFn: () => getDocument(docId),
     refetchInterval: (q) => (q.state.data?.status === 'QUEUED' || q.state.data?.status === 'PROCESSING' ? 1500 : false),
+    // A deleted/unknown document is a definitive 404 — don't retry it.
+    retry: (count, err) => !(err instanceof ApiError && err.status === 404) && count < 2,
   });
 
   const derivatives = useQuery({
@@ -63,11 +67,12 @@ export default function DocumentDetail() {
       if (result.deleted) {
         queryClient.invalidateQueries({ queryKey: ['documents'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-        setDeleteMsg('Document deleted.');
+        queryClient.invalidateQueries({ queryKey: ['purchases'] });
+        // The document no longer exists — leave its page instead of
+        // continuing to show stale data until the next refresh.
+        navigate('/app/documents', { replace: true });
       } else {
-        setDeleteMsg(
-          `Deletion on hold: ${result.hold.reason}. ${result.hold.condition}`,
-        );
+        setDeleteMsg(`Deletion on hold: ${result.hold.reason}. ${result.hold.condition}`);
       }
     },
     onError: (e) => setDeleteMsg(e instanceof ApiError ? e.message : 'Delete failed'),
@@ -76,9 +81,11 @@ export default function DocumentDetail() {
   const status = isProcessing.data;
   const doc = detail.data;
   const enhanced = derivatives.data?.items.find((d) => d.derivative_type === 'ENHANCED');
+  const notFound = detail.isError && detail.error instanceof ApiError && detail.error.status === 404;
 
   if (detail.isLoading) return <div className="text-slate-500">Loading…</div>;
-  if (!doc) return <div className="text-slate-500">Document not found.</div>;
+  // A 404 wins over any stale cached copy (e.g. deleted in another tab).
+  if (notFound || !doc) return <div className="text-slate-500">Document not found.</div>;
 
   return (
     <div>
@@ -99,14 +106,7 @@ export default function DocumentDetail() {
       </div>
 
       {deleteMsg && (
-        <div
-          role="alert"
-          className={`mt-4 rounded-md border px-3 py-2 text-sm ${
-            deleteMsg.startsWith('Document deleted')
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-              : 'border-amber-200 bg-amber-50 text-amber-800'
-          }`}
-        >
+        <div role="alert" className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
           {deleteMsg}
         </div>
       )}
