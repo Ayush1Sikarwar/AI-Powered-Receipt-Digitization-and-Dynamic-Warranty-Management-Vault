@@ -66,6 +66,10 @@ async function rawRequest<T>(path: string, opts: RequestOptions, accessToken: st
   return envelope.data;
 }
 
+function isAuthRejection(err: unknown): boolean {
+  return err instanceof ApiError && (err.status === 401 || err.status === 403);
+}
+
 export async function api<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   const tokens = loadTokens();
   const accessToken = opts.auth === false ? null : tokens?.accessToken ?? null;
@@ -73,15 +77,29 @@ export async function api<T>(path: string, opts: RequestOptions = {}): Promise<T
     return await rawRequest<T>(path, opts, accessToken);
   } catch (err) {
     if (err instanceof ApiError && err.status === 401 && opts.auth !== false && !opts.retry && tokens) {
-      // Attempt a single refresh then retry the original call.
+      // Step 1: get a fresh access token. ONLY a failure here can end the
+      // session, and only when the server definitively rejects the refresh
+      // token (401/403). A network error or 5xx must not wipe the tokens.
+      let fresh: AuthTokens;
       try {
-        const refreshed = await refreshTokens(tokens.refreshToken);
-        return await rawRequest<T>(path, { ...opts, retry: true }, refreshed.accessToken);
+        // If another request already rotated the tokens while this one was
+        // in flight, our refresh token is stale — reuse the new access
+        // token instead of refreshing again (the backend treats a second
+        // use of a rotated refresh token as theft and revokes the session).
+        const latest = loadTokens();
+        fresh =
+          latest && latest.accessToken !== tokens.accessToken
+            ? latest
+            : await refreshTokens(tokens.refreshToken);
       } catch (refreshErr) {
-        // Refresh failed: session is dead — force re-login.
-        saveTokens(null);
+        if (isAuthRejection(refreshErr)) saveTokens(null);
         throw refreshErr;
       }
+      // Step 2: retry the original request. This is deliberately OUTSIDE the
+      // try/catch above — a 404/422/500 on the retried request is just that
+      // request failing. It says nothing about the session, and previously
+      // it wiped the tokens, silently logging the user out on next refresh.
+      return rawRequest<T>(path, { ...opts, retry: true }, fresh.accessToken);
     }
     throw err;
   }
@@ -90,11 +108,9 @@ export async function api<T>(path: string, opts: RequestOptions = {}): Promise<T
 // Concurrent requests can each hit a 401 at the same moment (e.g. right
 // after a hard page refresh, when several components fetch at once with an
 // expired access token). The backend uses rotating refresh tokens with
-// reuse detection: the first refresh call rotates the token, and any
-// second call using the now-stale refresh token is correctly treated as
-// token reuse and revokes the whole session — logging the user out even
-// though nothing was actually wrong. Sharing one in-flight refresh across
-// all concurrent callers means only one rotation ever happens per expiry.
+// reuse detection: the first refresh rotates the token, and any second
+// call using the now-stale token is treated as reuse and revokes the whole
+// session. Sharing one in-flight refresh means only one rotation happens.
 let inFlightRefresh: Promise<AuthTokens> | null = null;
 
 export async function refreshTokens(refreshToken: string): Promise<AuthTokens> {
