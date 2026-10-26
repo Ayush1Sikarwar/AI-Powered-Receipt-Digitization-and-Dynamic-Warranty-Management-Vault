@@ -9,6 +9,7 @@
 """
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "4c9e2b7a1f60"

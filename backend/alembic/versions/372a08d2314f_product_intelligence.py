@@ -8,9 +8,10 @@ Revises: ae4f04771389
 Create Date: 2026-08-31
 """
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy import func
+
+from alembic import op
 
 revision = "372a08d2314f"
 down_revision = "ae4f04771389"
