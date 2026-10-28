@@ -39,6 +39,23 @@ jobs:
           cache-dependency-path: backend/pyproject.toml
       - name: Install OCR (Tesseract)
         run: sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-eng
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo apt-get install -y -qq curl ca-certificates
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+          /usr/lib/postgresql/17/bin/pg_dump --version
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+          export PATH="/usr/lib/postgresql/17/bin:$PATH"
+          pg_dump --version
+          pg_dump --version | grep -q " 17\." || { echo "Expected PostgreSQL 17 pg_dump"; exit 1; }
+      - name: Install Poppler
+        run: sudo apt-get install -y -qq poppler-utils
       - name: Build (install runtime + dev deps)
         working-directory: backend
         run: pip install -e ".[dev]"
@@ -112,11 +129,36 @@ jobs:
         run: |
           docker build -f infrastructure/docker/backend.Dockerfile -t warranty-vault-backend:ci .
           docker run --rm --entrypoint python warranty-vault-backend:ci -c "import app.main; print('image import OK')"
+
       - name: Build frontend image (runtime target)
         run: |
           docker build -f infrastructure/docker/frontend.Dockerfile --target runtime \
             --build-arg VITE_API_BASE=/api/v1 -t warranty-vault-frontend:ci .
-          docker run --rm --name fv warranty-vault-frontend:ci nginx -t
+
+
+      - name: Validate frontend Nginx configuration
+        run: |
+          set -e
+          docker network create warranty-ci-test
+          docker volume create warranty-ci-certs
+          trap 'docker rm -f backend 2>/dev/null || true; docker network rm warranty-ci-test 2>/dev/null || true; docker volume rm warranty-ci-certs 2>/dev/null || true' EXIT
+
+          docker run --rm -v warranty-ci-certs:/certs alpine:3.21 sh -c "
+            apk add --no-cache openssl >/dev/null &&
+            openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
+              -keyout /certs/privkey.pem \
+              -out /certs/fullchain.pem \
+              -subj '/CN=localhost'
+          "
+
+          docker run -d --name backend --network warranty-ci-test \
+            --network-alias backend nginx:alpine
+
+          docker run --rm --network warranty-ci-test \
+            -v warranty-ci-certs:/etc/nginx/certs:ro \
+            --entrypoint nginx warranty-vault-frontend:ci -t
+
+
       - name: Validate production compose (config parse)
         run: |
           # Compose must parse with a fully-populated env file (no defaults

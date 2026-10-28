@@ -3,6 +3,9 @@
 Runs against the dedicated `warranty_vault_test` database. The schema is
 rebuilt from Alembic migrations for every test session (migrations are
 verified as part of the test run).
+
+Environment variables use ``setdefault`` so that CI (or any environment
+that pre-sets DATABASE_URL) takes precedence over local dev defaults.
 """
 
 import os
@@ -14,28 +17,34 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
-# Must be set before any app module is imported (settings are cached).
-os.environ["DATABASE_URL"] = "postgresql+psycopg://warranty:warranty_dev_pw@127.0.0.1:5433/warranty_vault_test"
-os.environ["APP_ENV"] = "test"
-os.environ["AUTH_SECRET"] = "test-secret-not-for-production-0123456789"
-os.environ["EMAIL_PROVIDER"] = "log"
-os.environ["STORAGE_BACKEND"] = "local"
-os.environ["STORAGE_LOCAL_ROOT"] = "/tmp/warranty-vault-test-storage"
+# Set defaults for local development; CI overrides via environment.
+os.environ.setdefault("DATABASE_URL", "postgresql+psycopg://warranty:warranty_dev_pw@127.0.0.1:5433/warranty_vault_test")
+os.environ.setdefault("APP_ENV", "test")
+os.environ.setdefault("AUTH_SECRET", "test-secret-not-for-production-use-only-min-32-bytes-long!")
+os.environ.setdefault("EMAIL_PROVIDER", "log")
+os.environ.setdefault("STORAGE_BACKEND", "local")
+os.environ.setdefault("STORAGE_LOCAL_ROOT", "/tmp/warranty-vault-test-storage")
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-TEST_DB = "warranty_vault_test"
+# The effective DATABASE_URL is set above (CI overrides via environment).
+DATABASE_URL = os.environ["DATABASE_URL"]
 
 
 def _rebuild_test_schema() -> None:
     """DROP & recreate schema, then apply all Alembic migrations."""
     from alembic.config import Config
 
-    from alembic import command
+    # Refuse to rebuild schemas unless this is the dedicated test database.
+    from sqlalchemy.engine import make_url
 
-    engine = create_engine(
-        f"postgresql+psycopg://warranty:warranty_dev_pw@127.0.0.1:5433/{TEST_DB}", poolclass=None
-    )
+    from alembic import command
+    db_name = make_url(DATABASE_URL).database
+    if db_name != "warranty_vault_test":
+        raise RuntimeError(
+            f"Refusing to rebuild schema for unexpected database: {db_name}"
+        )
+    engine = create_engine(DATABASE_URL, poolclass=None)
     with engine.begin() as conn:
         conn.execute(text("DROP SCHEMA public CASCADE"))
         conn.execute(text("CREATE SCHEMA public"))

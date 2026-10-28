@@ -1,11 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { correctField, getFields, getClassification } from '../services/documents';
 import { createPurchase, listPurchases } from '../services/purchases';
+import { ApiError } from '../services/api';
 import type { FieldOut } from '../types/documents';
 
 type PatchPayload = { field_name: string; action: 'confirm' | 'correct' | 'reject'; value?: string | null };
+
+/** Surfaces the specific field + reason from a 422 validation error instead
+ * of a generic "Could not create purchase" — otherwise the person has no
+ * way to know which field to fix. */
+function formatPurchaseError(e: unknown): string {
+  if (e instanceof ApiError && e.status === 422 && e.details && typeof e.details === 'object') {
+    const errors = (e.details as { errors?: { loc?: string[]; msg?: string }[] }).errors;
+    if (errors && errors.length > 0) {
+      const parts = errors.map((err) => {
+        const field = err.loc?.[err.loc.length - 1] ?? 'field';
+        return `${field}: ${err.msg ?? 'invalid value'}`;
+      });
+      return `Could not create purchase — ${parts.join('; ')}`;
+    }
+  }
+  return e instanceof Error ? e.message : 'Could not create purchase';
+}
 
 /** SDD §8 confidence bands (PROVISIONAL until calibrated). */
 function confidenceBand(conf: number | null): { label: string; cls: string } {
@@ -124,12 +142,32 @@ export default function FieldReview({ docId, status }: { docId: number; status: 
   const qc = useQueryClient();
   const [msg, setMsg] = useState<string | null>(null);
 
-  const fields = useQuery({ queryKey: ['doc-fields', docId], queryFn: () => getFields(docId) });
-  const classification = useQuery({ queryKey: ['doc-classification', docId], queryFn: () => getClassification(docId) });
+  // While the worker is still running, keep re-checking. Without this the
+  // page fetched once (empty), and never noticed when processing finished.
+  const processing = status === 'QUEUED' || status === 'PROCESSING';
+
+  const fields = useQuery({
+    queryKey: ['doc-fields', docId],
+    queryFn: () => getFields(docId),
+    refetchInterval: processing ? 2000 : false,
+  });
+  const classification = useQuery({
+    queryKey: ['doc-classification', docId],
+    queryFn: () => getClassification(docId),
+    refetchInterval: processing ? 2000 : false,
+  });
   const purchasesForDoc = useQuery({
     queryKey: ['purchases-by-doc', docId],
     queryFn: () => listPurchases({ document_id: docId, page_size: 1 }),
   });
+
+  // Whenever the document's status changes (e.g. PROCESSING -> REVIEW_REQUIRED),
+  // refetch everything that depends on the pipeline's output right away.
+  useEffect(() => {
+    void qc.invalidateQueries({ queryKey: ['doc-fields', docId] });
+    void qc.invalidateQueries({ queryKey: ['doc-classification', docId] });
+    void qc.invalidateQueries({ queryKey: ['purchases-by-doc', docId] });
+  }, [status, docId, qc]);
 
   const create = useMutation({
     mutationFn: async () => {
@@ -176,7 +214,7 @@ export default function FieldReview({ docId, status }: { docId: number; status: 
       qc.invalidateQueries({ queryKey: ['purchases-by-doc', docId] });
       navigate(`/app/purchases/${res.purchase.id}`);
     },
-    onError: (e) => setMsg(e instanceof Error ? e.message : 'Could not create purchase'),
+    onError: (e) => setMsg(formatPurchaseError(e)),
   });
 
   const items = fields.data?.items ?? [];
@@ -197,8 +235,10 @@ export default function FieldReview({ docId, status }: { docId: number; status: 
         </p>
       )}
 
-      {fields.isLoading ? (
-        <div className="mt-3 text-sm text-slate-400">Loading extracted fields…</div>
+      {fields.isLoading || (processing && items.length === 0) ? (
+        <div className="mt-3 text-sm text-slate-400">
+          {processing ? 'Processing… fields will appear here automatically.' : 'Loading extracted fields…'}
+        </div>
       ) : items.length === 0 ? (
         <div className="mt-3 rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-500">
           No extracted fields yet. Fields with confidence and provenance appear here once the document AI

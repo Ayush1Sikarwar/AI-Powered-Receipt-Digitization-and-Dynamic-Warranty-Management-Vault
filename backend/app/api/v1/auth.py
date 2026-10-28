@@ -9,12 +9,15 @@ POST /auth/password-reset/confirm
 GET  /auth/me
 """
 
-from fastapi import APIRouter, Depends, Request
+from contextlib import suppress
+
+from fastapi import APIRouter, Depends, Header, Request
 from sqlalchemy.orm import Session
 
 from app.api import envelope
 from app.api.deps import current_user, get_db, get_request_id, rate_limit
 from app.core.config import get_settings
+from app.core.security import decode_access_token
 from app.models.user import User
 from app.schemas.auth import (
     LoginRequest,
@@ -64,12 +67,29 @@ def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)):
 @router.post("/logout")
 def logout(
     request: Request,
+    authorization: str | None = Header(default=None),
     body: RefreshRequest | None = None,
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
 ):
     refresh_token = body.refresh_token if body else None
-    auth_service.logout(db, user=user, refresh_token=refresh_token, request_id=get_request_id(request))
+
+    # Revoke the access token used for this request (from the Bearer header)
+    # so it cannot be reused after logout, even before its JWT expiry.
+    access_token_jti = None
+    if authorization and authorization.lower().startswith("bearer "):
+        with suppress(Exception):
+            access_token_jti = decode_access_token(
+                authorization.split(" ", 1)[1].strip()
+            )["jti"]
+
+    auth_service.logout(
+        db,
+        user=user,
+        refresh_token=refresh_token,
+        access_token_jti=access_token_jti,
+        request_id=get_request_id(request),
+    )
     return envelope.ok({"logged_out": True}, request)
 
 

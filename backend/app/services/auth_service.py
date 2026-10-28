@@ -24,7 +24,12 @@ from app.core.security import (
     new_token_id,
     verify_password,
 )
-from app.models.auth_token import PasswordResetToken, RefreshToken, RefreshTokenStatus
+from app.models.auth_token import (
+    PasswordResetToken,
+    RefreshToken,
+    RefreshTokenStatus,
+    RevokedAccessToken,
+)
 from app.models.user import User, UserStatus
 from app.notifications.email import EmailMessage, get_email_provider
 
@@ -169,6 +174,8 @@ def get_current_user(db: Session, access_token: str) -> User:
     user = db.get(User, int(payload["sub"]))
     if user is None or user.status != UserStatus.ACTIVE:
         raise AuthenticationError("User not found or inactive")
+    if _is_access_token_revoked(db, payload["jti"]):
+        raise AuthenticationError("Token revoked")
     return user
 
 
@@ -217,8 +224,11 @@ def logout(
     *,
     user: User,
     refresh_token: str | None = None,
+    access_token_jti: str | None = None,
     request_id: str | None = None,
 ) -> None:
+    if access_token_jti:
+        _revoke_access_token(db, access_token_jti, user.id)
     if refresh_token:
         record = db.scalar(select(RefreshToken).where(RefreshToken.token_hash == hash_token(refresh_token)))
         if record is not None and record.status == RefreshTokenStatus.ACTIVE:
@@ -246,6 +256,45 @@ def _revoke_user_tokens(db: Session, user_id: int) -> int:
             record.status = RefreshTokenStatus.REVOKED
             record.revoked_at = _utcnow()
             count += 1
+    db.commit()
+    return count
+
+
+def _revoke_access_token(db: Session, jti: str, user_id: int, expires_at: datetime | None = None) -> None:
+    """Mark an access-token JTI as revoked. Idempotent — re-voking is a no-op."""
+    existing = db.scalar(select(RevokedAccessToken).where(RevokedAccessToken.jti == jti))
+    if existing is not None:
+        return
+    if expires_at is None:
+        expires_at = _utcnow() + timedelta(minutes=settings.access_token_ttl_minutes)
+    db.add(
+        RevokedAccessToken(
+            jti=jti,
+            user_id=user_id,
+            expires_at=expires_at,
+        )
+    )
+    db.commit()
+
+
+def _is_access_token_revoked(db: Session, jti: str) -> bool:
+    """Return True if the access-token JTI is in the revocation list."""
+    return db.scalar(select(RevokedAccessToken).where(RevokedAccessToken.jti == jti)) is not None
+
+
+def purge_expired_revocations(db: Session) -> int:
+    """Remove revocation rows whose underlying access token has expired.
+
+    Called periodically to keep the revocation table bounded. Safe to run
+    on every logout/refresh; expired rows are harmless but should not grow
+    unboundedly.
+    """
+    count = 0
+    for record in db.scalars(
+        select(RevokedAccessToken).where(RevokedAccessToken.expires_at < _utcnow())
+    ):
+        db.delete(record)
+        count += 1
     db.commit()
     return count
 
@@ -283,7 +332,7 @@ def request_password_reset(
             body_text=(
                 f"Hi {user.display_name},\n\n"
                 "We received a request to reset your WarrantyVault AI password.\n"
-                f"Open this link within {settings.password_reset_token_ttl_minutes} minutes:\n{link}\n\n"
+                f"Open this link within {settings.password_reset_token_ttl_minutes} minutes:{link}\n\n"
                 "If you did not request this, you can ignore this email.\n"
             ),
             payload={"type": "password_reset", "user_id": user.id},
@@ -315,7 +364,7 @@ def confirm_password_reset(db: Session, *, token: str, new_password: str, reques
         raise ValidationError("User no longer exists")
     user.password_hash = hash_password(new_password)
     record.used_at = _utcnow()
-    _revoke_user_tokens(db, user.id)  # invalidate all sessions after reset
+    _revoke_user_tokens(db, user.id)
     db.commit()
     audit_helper.audit(
         db,

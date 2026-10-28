@@ -16,6 +16,22 @@ class RefreshTokenStatus(enum.StrEnum):
     ROTATED = "ROTATED"  # replaced by a newer token during refresh
 
 
+class RevokedAccessToken(Base, TimestampMixin):
+    """Revoked access-token JTIs, checked on every authenticated request.
+
+    Access tokens are stateless JWTs; this table is the revocation list.
+    A row means the JTI must be rejected even though the JWT signature and
+    expiry are still valid (e.g. after logout). Rows are purged once the
+    underlying token's expiry has passed (see purge_expired_revocations).
+    """
+
+    __tablename__ = "revoked_access_tokens"
+
+    jti: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    user_id: Mapped[int] = mapped_column(index=True, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class PasswordResetToken(Base, TimestampMixin):
     """One-time password-reset tokens; stored hashed, single-use, short-lived."""
 

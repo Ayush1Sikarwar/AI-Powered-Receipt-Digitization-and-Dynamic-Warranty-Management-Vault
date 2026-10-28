@@ -1,12 +1,12 @@
-# WarrantyVault AI — production backend image (API and worker share it;
+﻿# WarrantyVault AI â€” production backend image (API and worker share it;
 # the entrypoint differs: uvicorn vs `python -m app.workers.run`).
 #
-# Hardening (TSD §51):
+# Hardening (TSD Â§51):
 # - non-root runtime user (least privilege)
 # - no dev extras, no source outside the app tree
 # - image healthcheck (liveness; readiness is probed at /health/ready)
 # - tesseract + glib required by the OCR/enhancement pipeline
-FROM python:3.12-slim AS base
+FROM python:3.12-bookworm AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -19,7 +19,7 @@ RUN apt-get update -qq && \
 
 WORKDIR /srv
 
-# Install dependencies first (layer cache) — runtime deps only.
+# Install dependencies first (layer cache) â€” runtime deps only.
 COPY backend/pyproject.toml backend/README.md* ./
 RUN pip install --no-cache-dir .
 
@@ -32,6 +32,7 @@ COPY backend/scripts ./scripts
 # Migrations run as a separate compose step (migrate service) or via
 # `docker compose run --rm backend alembic upgrade head`.
 ENV PYTHONPATH=/srv
+RUN mkdir -p /srv/data && chown app:app /srv/data
 USER app
 EXPOSE 8000
 
@@ -39,3 +40,4 @@ HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=5 \
     CMD curl -fsS http://127.0.0.1:8000/health/ready || exit 1
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+

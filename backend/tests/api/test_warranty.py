@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import date
+from unittest.mock import patch
 
 import pytest
 from sqlalchemy import select
@@ -315,3 +316,96 @@ def test_user_policy_browse(app_client, authed_user, db_session):
     items = r.json()["data"]["items"]
     assert len(items) == 2
     assert all(i["manufacturer"] == "QTech Electronics" for i in items)
+
+
+def test_review_survives_notification_scheduling_failure(app_client, authed_user, db_session):
+    """A successful warranty review remains committed when notification scheduling raises."""
+    s = _seed(db_session)
+    p = _create_purchase(
+        app_client,
+        authed_user["access_token"],
+        {
+            "purchase_date": PURCHASE_DATE,
+            "warranty_region": "IN",
+            "items": [{"product_id": s["tv"].id, "product_name": "QLED TV"}],
+        },
+    )
+    item_id = p["items"][0]["id"]
+    h = {"Authorization": f"Bearer {authed_user['access_token']}"}
+
+    # Make notification scheduling raise — the review must still be committed.
+    with patch(
+        "app.services.notification_service.schedule_warranty_reminders",
+        side_effect=RuntimeError("notification store down"),
+    ):
+        r = app_client.post(
+            f"/api/v1/purchases/{p['id']}/warranty/review",
+            headers=h,
+            json={"item_id": item_id, "action": "confirm"},
+        )
+    assert r.status_code == 200, r.text
+    assert r.json()["data"]["mapping"]["verification_status"] == "USER_CONFIRMED"
+
+    # Verify the mapping is actually committed (not rolled back).
+    w = app_client.get(f"/api/v1/purchases/{p['id']}/warranty", headers=h).json()["data"][
+        "items"
+    ][0]
+    assert w["mapped"] is True
+    assert w["verification_status"] == "USER_CONFIRMED"
+
+
+def test_review_schedules_reminders_normally(app_client, authed_user, db_session):
+    """Successful scheduling still works normally (no mock, real code path)."""
+    s = _seed(db_session)
+    p = _create_purchase(
+        app_client,
+        authed_user["access_token"],
+        {
+            "purchase_date": PURCHASE_DATE,
+            "warranty_region": "IN",
+            "items": [{"product_id": s["ac"].id, "product_name": "SPLIT AC 1.5T"}],
+        },
+    )
+    item_id = p["items"][0]["id"]
+    h = {"Authorization": f"Bearer {authed_user['access_token']}"}
+
+    r = app_client.post(
+        f"/api/v1/purchases/{p['id']}/warranty/review",
+        headers=h,
+        json={"item_id": item_id, "action": "confirm"},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["data"]["mapping"]["verification_status"] == "USER_CONFIRMED"
+
+
+def test_review_genuine_failure_not_swallowed(app_client, authed_user, db_session):
+    """A genuine warranty-review/database failure is not incorrectly swallowed."""
+    s = _seed(db_session)
+    p = _create_purchase(
+        app_client,
+        authed_user["access_token"],
+        {
+            "purchase_date": PURCHASE_DATE,
+            "warranty_region": "IN",
+            "items": [{"product_id": s["ac"].id, "product_name": "SPLIT AC 1.5T"}],
+        },
+    )
+    h = {"Authorization": f"Bearer {authed_user['access_token']}"}
+
+    # Override without policy_id -> genuine validation failure, not swallowed.
+    r = app_client.post(
+        f"/api/v1/purchases/{p['id']}/warranty/review",
+        headers=h,
+        json={"item_id": p["items"][0]["id"], "action": "override"},
+    )
+    assert r.status_code in (422, 400), r.text
+    body = r.json()
+    assert body["error_code"] == "VALIDATION_ERROR"
+
+    # Non-existent item -> genuine not-found failure, not swallowed.
+    r = app_client.post(
+        f"/api/v1/purchases/{p['id']}/warranty/review",
+        headers=h,
+        json={"item_id": 999999, "action": "confirm"},
+    )
+    assert r.status_code in (422, 400), r.text

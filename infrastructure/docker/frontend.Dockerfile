@@ -26,6 +26,6 @@ FROM nginx:1.27-alpine AS runtime
 # Runtime config is mounted (see compose.prod): nginx.conf + TLS certs +
 # the SPA build.
 COPY infrastructure/nginx/nginx.conf /etc/nginx/nginx.conf
-COPY frontend/dist /usr/share/nginx/html
+COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 443 80
 CMD ["nginx", "-g", "daemon off;"]

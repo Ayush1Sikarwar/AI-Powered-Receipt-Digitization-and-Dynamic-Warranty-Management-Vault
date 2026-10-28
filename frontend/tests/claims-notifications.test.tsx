@@ -173,7 +173,8 @@ describe('Claims page', () => {
   });
 
   it('creates a claim from the form (POST /claims)', async () => {
-    const spy = routeFetch((_m, url) => {
+    const spy = routeFetch((method, url) => {
+      if ((url === '/api/v1/claims' || url.startsWith('/api/v1/claims?')) && method === 'POST') return jsonResponse({ claim: CLAIM });
       if (url === '/api/v1/claims' || url.startsWith('/api/v1/claims?')) return jsonResponse({ items: [], total: 0 });
       if (url.includes('/purchases')) return jsonResponse(PURCHASES);
       if (url.endsWith('/claims')) return jsonResponse({ claim: CLAIM });

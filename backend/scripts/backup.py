@@ -30,6 +30,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 BACKUP_SET_RE = re.compile(r"^backup_\d{8}_\d{6}(_\w+)?$")
+def _docker_pg_tool(tool: str) -> list[str] | None:
+    """Return a Docker command when the PostgreSQL tool is unavailable locally."""
+    if shutil.which(tool):
+        return None
+
+    container = os.environ.get(
+        "POSTGRES_CONTAINER",
+        "warrantyvaultai-postgres-1",
+    )
+    return ["docker", "exec", "-i", container, tool]
 
 
 def _sha256(path: Path) -> str:
@@ -96,6 +106,7 @@ def _storage_stats(storage_dir: Path) -> dict:
     }
 
 
+
 def create_backup(
     *,
     db_url: str,
@@ -117,28 +128,95 @@ def create_backup(
     dump_path = set_dir / "database.dump"
     parts = _pg_dsn(db_url)
     db_name = parts["dbname"]
-    pg_env = {**os.environ, "PGCONNECT_TIMEOUT": "30", **{k: v for k, v in parts.items() if k != "dbname"}}
-    proc = subprocess.run(
-        ["pg_dump", "-Fc", "--no-owner", "-d", db_name, "-f", str(dump_path)],
-        env=pg_env,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0 or not dump_path.is_file() or dump_path.stat().st_size == 0:
-        raise RuntimeError(f"pg_dump failed: {proc.stderr.strip()[:500]}")
 
-    storage_tar: Path | None = None
-    if storage_dir.is_dir():
-        storage_tar = set_dir / "storage.tar.gz"
+    pg_env = {
+        **os.environ,
+        "PGCONNECT_TIMEOUT": "30",
+        **{k: v for k, v in parts.items() if k != "dbname"},
+    }
+
+    if shutil.which("pg_dump"):
         proc = subprocess.run(
-            ["tar", "-czf", str(storage_tar), "-C", str(storage_dir), "."],
+            [
+                "pg_dump",
+                "-Fc",
+                "--no-owner",
+                "-d",
+                db_name,
+                "-f",
+                str(dump_path),
+            ],
+            env=pg_env,
             capture_output=True,
             text=True,
             check=False,
         )
+
+        error = proc.stderr
+
+    else:
+        container = os.environ.get(
+            "POSTGRES_CONTAINER",
+            "warrantyvaultai-postgres-1",
+        )
+
+        proc = subprocess.run(
+            [
+                "docker",
+                "exec",
+                "-i",
+                "-e",
+                f"PGUSER={parts['PGUSER']}",
+                "-e",
+                f"PGPASSWORD={parts['PGPASSWORD']}",
+                "-e",
+                "PGCONNECT_TIMEOUT=30",
+                container,
+                "pg_dump",
+                "-Fc",
+                "--no-owner",
+                "-d",
+                db_name,
+            ],
+            capture_output=True,
+            check=False,
+        )
+
+        error = proc.stderr.decode(errors="replace")
+
+        if proc.returncode == 0:
+            dump_path.write_bytes(proc.stdout)
+
+    if (
+        proc.returncode != 0
+        or not dump_path.is_file()
+        or dump_path.stat().st_size == 0
+    ):
+        raise RuntimeError(f"pg_dump failed: {error.strip()[:500]}")
+
+    storage_tar: Path | None = None
+
+    if storage_dir.is_dir():
+        storage_tar = set_dir / "storage.tar.gz"
+
+        proc = subprocess.run(
+            [
+                "tar",
+                "-czf",
+                str(storage_tar),
+                "-C",
+                str(storage_dir),
+                ".",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
         if proc.returncode != 0:
-            raise RuntimeError(f"storage tar failed: {proc.stderr.strip()[:500]}")
+            raise RuntimeError(
+                f"storage tar failed: {proc.stderr.strip()[:500]}"
+            )
 
     manifest = {
         "set": set_name,
@@ -147,14 +225,30 @@ def create_backup(
         "table_counts": _table_counts(db_url),
         "storage": _storage_stats(storage_dir),
         "files": {
-            "database.dump": {"bytes": dump_path.stat().st_size, "sha256": _sha256(dump_path)},
-            **({"storage.tar.gz": {"bytes": storage_tar.stat().st_size, "sha256": _sha256(storage_tar)}} if storage_tar else {}),
+            "database.dump": {
+                "bytes": dump_path.stat().st_size,
+                "sha256": _sha256(dump_path),
+            },
+            **(
+                {
+                    "storage.tar.gz": {
+                        "bytes": storage_tar.stat().st_size,
+                        "sha256": _sha256(storage_tar),
+                    }
+                }
+                if storage_tar
+                else {}
+            ),
         },
     }
-    (set_dir / "manifest.json").write_text(json.dumps(manifest, indent=2))
+
+    (set_dir / "manifest.json").write_text(
+        json.dumps(manifest, indent=2)
+    )
 
     pruned = prune_backup_sets(out_dir, keep) if keep > 0 else []
     manifest["pruned"] = pruned
+
     return manifest
 
 
