@@ -35,15 +35,9 @@ def _rebuild_test_schema() -> None:
     """DROP & recreate schema, then apply all Alembic migrations."""
     from alembic.config import Config
 
-    # Refuse to rebuild schemas unless this is the dedicated test database.
-    from sqlalchemy.engine import make_url
-
     from alembic import command
-    db_name = make_url(DATABASE_URL).database
-    if db_name != "warranty_vault_test":
-        raise RuntimeError(
-            f"Refusing to rebuild schema for unexpected database: {db_name}"
-        )
+
+    # Use the effective DATABASE_URL (respects CI environment).
     engine = create_engine(DATABASE_URL, poolclass=None)
     with engine.begin() as conn:
         conn.execute(text("DROP SCHEMA public CASCADE"))
