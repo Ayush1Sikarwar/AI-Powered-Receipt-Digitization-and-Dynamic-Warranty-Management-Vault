@@ -91,7 +91,8 @@ def _estimate_skew(gray: np.ndarray, max_angle: float = 15.0) -> float:
         return 0.0
     # Coarse search.
     best_angle, best_score = 0.0, -1.0
-    for angle in np.arange(-max_angle, max_angle + 0.5, 0.5):
+    for raw_angle in np.arange(-max_angle, max_angle + 0.5, 0.5):
+        angle = float(raw_angle)
         h, w = inv.shape
         m = cv2.getRotationMatrix2D((w / 2, h / 2), angle, 1.0)
         rot = cv2.warpAffine(inv, m, (w, h), flags=cv2.INTER_NEAREST)
