@@ -25,7 +25,6 @@ from app.schemas.auth import (
     PasswordResetRequestRequest,
     RefreshRequest,
     RegisterRequest,
-    UserOut,
     UserUpdate,
 )
 from app.services import auth_service
@@ -118,9 +117,9 @@ def password_reset_confirm(body: PasswordResetConfirmRequest, request: Request, 
     return envelope.ok({"reset": True}, request)
 
 
-@router.get("/me", response_model=UserOut)
-def me(user: User = Depends(current_user)):
-    return user
+@router.get("/me")
+def me(request: Request, user: User = Depends(current_user)):
+    return envelope.ok(envelope.user_out(user), request)
 
 
 @router.patch("/me")
