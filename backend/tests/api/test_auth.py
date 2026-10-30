@@ -21,7 +21,7 @@ def test_register_login_me_logout_flow(app_client):
     # /me with the access token
     me = app_client.get("/api/v1/auth/me", headers=auth_headers(reg))
     assert me.status_code == 200
-    assert me.json()["email"] == email
+    assert me.json()["data"]["email"] == email
 
     # /me without token -> 401
     assert app_client.get("/api/v1/auth/me").status_code == 401
@@ -179,7 +179,7 @@ def test_access_token_valid_before_logout(app_client, registered_user):
     headers = auth_headers(registered_user)
     resp = app_client.get("/api/v1/auth/me", headers=headers)
     assert resp.status_code == 200
-    assert resp.json()["email"] == registered_user["email"]
+    assert resp.json()["data"]["email"] == registered_user["email"]
 
 
 def test_logout_revokes_access_token(app_client, registered_user):
